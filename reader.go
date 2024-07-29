@@ -697,6 +697,9 @@ func decodeLineOfMediaPlaylist(p *MediaPlaylist, wv *WV, state *decodingState, l
 				dr.EndOnNext = v
 			default:
 				if strings.HasPrefix(k, "X-") {
+					if dr.X == nil {
+						dr.X = make(map[string]string)
+					}
 					dr.X[k] = v
 				} else {
 					if strict {

@@ -633,6 +633,38 @@ func TestMediaPlaylistWithDATERANAGETags(t *testing.T) {
 	}
 }
 
+func TestMediaPlaylistWithDATERANAGECustomTags(t *testing.T) {
+	f, err := os.Open("sample-playlists/media-playlist-with-daterange-custom.m3u8")
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, _, err := DecodeFrom(bufio.NewReader(f), true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pp := p.(*MediaPlaylist)
+
+	expected := DateRange{ID: "126-0", Class: "urn:sva:advertising-wg:ad-id-signaling",
+		X: map[string]string{
+			"X-AD-CREATIVE-SIGNALING": "eyJ2ZXJzaW9uIjoxLCJpZGVudGlmaWVycyI6W3sic2NoZW1lIjoidXJuOnNtcHRlOnVsOjA2MEUyQjM0LjAxMDQwMTAxLjAxMjAwOTAwLjAwMDAwMDAwIiwidmFsdWUiOiJsYW5kcm92ZXIiLCJhZF9wb3NpdGlvbiI6IjEyNiIsImFkX3R5cGUiOiJhdmFpbCIsInRyYWNraW5nX3VyaSI6Ii4uLy4uLy4uLy4uLy4uLy4uLy4uLy4uL3RyYWNraW5nLzY2NmE2YzBmODEwYTZlOWE4MDY3NWIwN2U2M2IxODkzNzNlNGIwYzUvcm9nZXItdGVzdC1qaXQtaGxzLXByZXAvNzEyOWJkYjMtZTRlNy00YTQyLThjNWQtNzcxMzk5Y2RhZjIzIiwiY3VzdG9tX3Zhc3RfZGF0YSI6IiIsInN0YXJ0X3RpbWVfaW5fc2Vjb25kcyI6MC4wLCJtYW5hZ2VkX3ByaXZhdGVfdXBpZF9kYXRhIjpudWxsfV19",
+		},
+	}
+	actual := pp.Segments[0].DateRange[0]
+
+	if expected.ID != actual.ID {
+		t.Errorf("daterange comparison error ID %s != %s", expected.ID, actual.ID)
+	}
+	if expected.Class != actual.Class {
+		t.Errorf("daterange comparison error CLASS %s != %s", expected.Class, actual.Class)
+	}
+
+	for k, v := range expected.X {
+		if v != actual.X[k] {
+			t.Errorf("daterange comparison error X-%s != %s", k, v)
+		}
+	}
+}
+
 func TestDecodeMediaPlaylistWithDiscontinuitySeq(t *testing.T) {
 	f, err := os.Open("sample-playlists/media-playlist-with-discontinuity-seq.m3u8")
 	if err != nil {
