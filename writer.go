@@ -340,7 +340,7 @@ func NewMediaPlaylist(winsize uint, capacity uint) (*MediaPlaylist, error) {
 
 // InsertSegments allows the insertion of one or multiple MediaSegments into the MediaPlaylist.
 // seqID is the sequence ID at which the new segments should be inserted to
-func (p *MediaPlaylist) InsertSegments(segments []*MediaSegment, seqID uint64) error {
+func (p *MediaPlaylist) InsertSegments(segments []MediaSegment, seqID uint64) error {
 	if len(segments) == 0 {
 		return ErrPlaylistEmpty
 	}
@@ -348,7 +348,7 @@ func (p *MediaPlaylist) InsertSegments(segments []*MediaSegment, seqID uint64) e
 	// Create copies of the segments to be inserted
 	localSegments := make([]*MediaSegment, len(segments))
 	for i, segment := range segments {
-		copySegment := *segment // Create a shallow copy of the segment
+		copySegment := segment // Create a shallow copy of the segment
 		localSegments[i] = &copySegment
 	}
 
