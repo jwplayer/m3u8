@@ -358,7 +358,7 @@ func (p *MediaPlaylist) InsertSegments(segments []MediaSegment, seqID uint64) er
 
 	// Determine the index where the new segments should be inserted
 	var insertIndex int
-	// Allow passing in 0 for prerolls
+	// Allow for insertion at the beginning of the playlist
 	if seqID == 0 {
 		insertIndex = 0
 	} else {
