@@ -340,42 +340,51 @@ func NewMediaPlaylist(winsize uint, capacity uint) (*MediaPlaylist, error) {
 
 // InsertSegments allows the insertion of one or multiple MediaSegments into the MediaPlaylist.
 // seqID is the sequence ID at which the new segments should be inserted to
-func (p *MediaPlaylist) InsertSegments(segments []MediaSegment, seqID uint64) error {
+// This operation does reset playlist cache.
+func (p *MediaPlaylist) InsertSegments(segments []*MediaSegment, seqID uint64) error {
 	if len(segments) == 0 {
 		return ErrPlaylistEmpty
 	}
 
-	// Create copies of the segments to be inserted
-	localSegments := make([]*MediaSegment, len(segments))
-	for i, segment := range segments {
-		copySegment := segment // Create a shallow copy of the segment
-		localSegments[i] = &copySegment
-	}
-
-	adjustment := uint(len(localSegments))
-	p.count += adjustment
-	p.tail += adjustment
-
 	// Determine the index where the new segments should be inserted
-	var insertIndex int
-	// Allow for insertion at the beginning of the playlist
-	if seqID == 0 {
-		insertIndex = 0
-	} else {
-		// Find the index where the new segments should be inserted
-		for i, segment := range p.Segments {
-			if segment.SeqId == seqID {
-				insertIndex = i + 1
-				break
-			}
-		}
+	var insertIndex = 0
+	switch {
+	case seqID >= uint64(len(p.Segments)):
+		insertIndex = len(p.Segments)
+	case seqID != 0 && seqID < uint64(len(p.Segments)):
+		insertIndex = int(seqID) - 1
 	}
+
+	// Create copies of the segments to be inserted
+	localSegments := make([]*MediaSegment, len(segments), len(segments)+len(p.Segments[insertIndex:]))
+	copy(localSegments, segments)
+
+	// Adjust values
+	adjustment := uint(len(segments))
+	p.count += adjustment
+	p.capacity += adjustment
+	p.tail = p.count
 
 	// Insert the new segments into the playlist
-	p.Segments = append(p.Segments[:insertIndex], append(localSegments, p.Segments[insertIndex:]...)...)
+	newLength := len(p.Segments) + len(localSegments)
+	if cap(p.Segments) < newLength {
+		newSegments := make([]*MediaSegment, newLength)
+		copy(newSegments, p.Segments[:insertIndex])
+		copy(newSegments[insertIndex+len(localSegments):], p.Segments[insertIndex:])
+		p.Segments = newSegments
+	} else {
+		p.Segments = p.Segments[:newLength]
+		copy(p.Segments[insertIndex+len(localSegments):], p.Segments[insertIndex:])
+	}
 
+	// Insert the new segments
+	copy(p.Segments[insertIndex:], localSegments)
+
+	iterator := 1
+	// Adjust the sequence IDs of the inserted segments
 	for i := insertIndex; i < len(p.Segments[:insertIndex])+len(localSegments); i++ {
-		p.Segments[i].SeqId += uint64(len(p.Segments[:insertIndex]))
+		p.Segments[i].SeqId = uint64(insertIndex + iterator)
+		iterator++
 	}
 
 	// Adjust the sequence IDs of the following segments
@@ -384,6 +393,7 @@ func (p *MediaPlaylist) InsertSegments(segments []MediaSegment, seqID uint64) er
 			p.Segments[i].SeqId += uint64(adjustment)
 		}
 	}
+	p.buf.Reset()
 	return nil
 }
 

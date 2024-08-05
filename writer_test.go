@@ -20,6 +20,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 )
 
 // Check how master and media playlists implement common Playlist interface
@@ -1051,6 +1053,110 @@ func TestEncodeMediaPlaylistDateRangeTagsForInterstitials(t *testing.T) {
 			t.Fatalf("Media playlist does not contain daterange tag: %s\nMedia Playlist:\n%v", expected, encoded)
 		}
 	}
+}
+
+func TestInsertSegments(t *testing.T) {
+	tests := []struct {
+		name            string
+		seqID           uint64
+		initialSegments []*MediaSegment
+		expectedResult  []*MediaSegment
+	}{
+		{
+			name:  "Insert at the beginning",
+			seqID: 0,
+			initialSegments: []*MediaSegment{
+				{SeqId: 1, URI: "original"},
+				{SeqId: 2, URI: "original"},
+				{SeqId: 3, URI: "original"},
+			},
+			expectedResult: []*MediaSegment{
+				{SeqId: 1, URI: "new"},
+				{SeqId: 2, URI: "new"},
+				{SeqId: 3, URI: "original"},
+				{SeqId: 4, URI: "original"},
+				{SeqId: 5, URI: "original"},
+			},
+		},
+		{
+			name:  "Insert in the middle",
+			seqID: 2,
+			initialSegments: []*MediaSegment{
+				{SeqId: 1, URI: "original"},
+				{SeqId: 2, URI: "original"},
+				{SeqId: 3, URI: "original"},
+			},
+			expectedResult: []*MediaSegment{
+				{SeqId: 1, URI: "original"},
+				{SeqId: 2, URI: "new"},
+				{SeqId: 3, URI: "new"},
+				{SeqId: 4, URI: "original"},
+				{SeqId: 5, URI: "original"},
+			},
+		},
+		{
+			name:  "Insert at the end",
+			seqID: 3,
+			initialSegments: []*MediaSegment{
+				{SeqId: 1, URI: "original"},
+				{SeqId: 2, URI: "original"},
+				{SeqId: 3, URI: "original"},
+			},
+			expectedResult: []*MediaSegment{
+				{SeqId: 1, URI: "original"},
+				{SeqId: 2, URI: "original"},
+				{SeqId: 3, URI: "original"},
+				{SeqId: 4, URI: "new"},
+				{SeqId: 5, URI: "new"},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			newSegments := []*MediaSegment{
+				{SeqId: 10, URI: "new"},
+				{SeqId: 11, URI: "new"},
+			}
+			playlist := &MediaPlaylist{
+				Segments: tt.initialSegments,
+				count:    uint(len(tt.initialSegments)),
+				tail:     uint(len(tt.initialSegments)),
+			}
+			err := playlist.InsertSegments(newSegments, tt.seqID)
+			require.NoError(t, err)
+			require.Equal(t, tt.expectedResult, playlist.Segments)
+		})
+	}
+	t.Run("Can fit into capacity", func(t *testing.T) {
+		playlist := &MediaPlaylist{}
+		initialSegments := make([]*MediaSegment, 3, 10)
+		initialSegments[0] = &MediaSegment{SeqId: 1, URI: "original"}
+		initialSegments[1] = &MediaSegment{SeqId: 2, URI: "original"}
+		initialSegments[2] = &MediaSegment{SeqId: 3, URI: "original"}
+		playlist.Segments = initialSegments
+
+		playlist.count = 3
+
+		newSegments := []*MediaSegment{
+			{SeqId: 10, URI: "new"},
+			{SeqId: 11, URI: "new"},
+		}
+
+		err := playlist.InsertSegments(newSegments, 4)
+		require.Equal(t, 5, len(playlist.Segments))
+		require.Equal(t, 10, cap(playlist.Segments))
+		require.NoError(t, err)
+		require.Equal(t, tests[2].expectedResult, playlist.Segments)
+
+	})
+
+	t.Run("Empty segments error", func(t *testing.T) {
+		playlist := &MediaPlaylist{}
+		err := playlist.InsertSegments([]*MediaSegment{}, 0)
+		require.Error(t, err)
+		require.Equal(t, ErrPlaylistEmpty, err)
+	})
 }
 
 // Create new media playlist
