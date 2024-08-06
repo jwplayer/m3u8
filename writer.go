@@ -357,7 +357,7 @@ func (p *MediaPlaylist) InsertSegments(segments []*MediaSegment, seqID uint64) e
 
 	adjustment := uint(len(segments))
 
-	// Insert the new segments into the playlist
+	// Shift MediaPlaylist segments in preparation for insertion
 	newLength := len(p.Segments) + len(segments)
 	if cap(p.Segments) < newLength {
 		newSegments := make([]*MediaSegment, newLength)
@@ -369,7 +369,7 @@ func (p *MediaPlaylist) InsertSegments(segments []*MediaSegment, seqID uint64) e
 		copy(p.Segments[insertIndex+len(segments):], p.Segments[insertIndex:])
 	}
 
-	// Shift MediaPlaylist segments in preparation for insertion
+	// Insert the segments
 	copy(p.Segments[insertIndex:], segments)
 
 	iterator := 1
