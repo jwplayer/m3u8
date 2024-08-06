@@ -24,6 +24,9 @@ import (
 // ErrPlaylistFull declares the playlist error.
 var ErrPlaylistFull = errors.New("playlist is full")
 
+// ErrPlaylistFull declares the provided playlist is empty
+var ErrPlaylistEmpty = errors.New("playlist is empty")
+
 // Set version of the playlist accordingly with section 7
 func version(ver *uint8, newver uint8) {
 	if *ver < newver {
@@ -333,6 +336,62 @@ func NewMediaPlaylist(winsize uint, capacity uint) (*MediaPlaylist, error) {
 	}
 	p.Segments = make([]*MediaSegment, capacity)
 	return p, nil
+}
+
+// InsertSegments allows the insertion of one or multiple MediaSegments into the MediaPlaylist.
+// seqID is the sequence ID at which the new segments should be inserted to
+// This operation does reset playlist cache.
+func (p *MediaPlaylist) InsertSegments(segments []*MediaSegment, seqID uint64) error {
+	if len(segments) == 0 {
+		return ErrPlaylistEmpty
+	}
+
+	// Determine the index where the new segments should be inserted
+	var insertIndex = 0
+	switch {
+	case seqID >= uint64(len(p.Segments)):
+		insertIndex = len(p.Segments)
+	case seqID != 0 && seqID < uint64(len(p.Segments)):
+		insertIndex = int(seqID) - 1
+	}
+
+	adjustment := uint(len(segments))
+
+	// Shift MediaPlaylist segments in preparation for insertion
+	newLength := len(p.Segments) + len(segments)
+	if cap(p.Segments) < newLength {
+		newSegments := make([]*MediaSegment, newLength)
+		copy(newSegments, p.Segments[:insertIndex])
+		copy(newSegments[insertIndex+len(segments):], p.Segments[insertIndex:])
+		p.Segments = newSegments
+	} else {
+		p.Segments = p.Segments[:newLength]
+		copy(p.Segments[insertIndex+len(segments):], p.Segments[insertIndex:])
+	}
+
+	// Insert the segments
+	copy(p.Segments[insertIndex:], segments)
+
+	iterator := 1
+	// Adjust the sequence IDs of the inserted segments
+	for i := insertIndex; i < len(p.Segments[:insertIndex])+len(segments); i++ {
+		p.Segments[i].SeqId = uint64(insertIndex + iterator)
+		iterator++
+	}
+
+	// Adjust the sequence IDs of the following segments
+	for i := insertIndex + len(segments); i < len(p.Segments); i++ {
+		if p.Segments[i] != nil {
+			p.Segments[i].SeqId += uint64(adjustment)
+		}
+	}
+
+	p.count += adjustment
+	p.capacity += adjustment
+	p.tail = p.count
+
+	p.buf.Reset()
+	return nil
 }
 
 // last returns the previously written segment's index
