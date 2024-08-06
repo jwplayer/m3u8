@@ -355,44 +355,41 @@ func (p *MediaPlaylist) InsertSegments(segments []*MediaSegment, seqID uint64) e
 		insertIndex = int(seqID) - 1
 	}
 
-	// Create copies of the segments to be inserted
-	localSegments := make([]*MediaSegment, len(segments), len(segments)+len(p.Segments[insertIndex:]))
-	copy(localSegments, segments)
-
-	// Adjust values
 	adjustment := uint(len(segments))
-	p.count += adjustment
-	p.capacity += adjustment
-	p.tail = p.count
 
 	// Insert the new segments into the playlist
-	newLength := len(p.Segments) + len(localSegments)
+	newLength := len(p.Segments) + len(segments)
 	if cap(p.Segments) < newLength {
 		newSegments := make([]*MediaSegment, newLength)
 		copy(newSegments, p.Segments[:insertIndex])
-		copy(newSegments[insertIndex+len(localSegments):], p.Segments[insertIndex:])
+		copy(newSegments[insertIndex+len(segments):], p.Segments[insertIndex:])
 		p.Segments = newSegments
 	} else {
 		p.Segments = p.Segments[:newLength]
-		copy(p.Segments[insertIndex+len(localSegments):], p.Segments[insertIndex:])
+		copy(p.Segments[insertIndex+len(segments):], p.Segments[insertIndex:])
 	}
 
-	// Insert the new segments
-	copy(p.Segments[insertIndex:], localSegments)
+	// Shift MediaPlaylist segments in preparation for insertion
+	copy(p.Segments[insertIndex:], segments)
 
 	iterator := 1
 	// Adjust the sequence IDs of the inserted segments
-	for i := insertIndex; i < len(p.Segments[:insertIndex])+len(localSegments); i++ {
+	for i := insertIndex; i < len(p.Segments[:insertIndex])+len(segments); i++ {
 		p.Segments[i].SeqId = uint64(insertIndex + iterator)
 		iterator++
 	}
 
 	// Adjust the sequence IDs of the following segments
-	for i := insertIndex + len(localSegments); i < len(p.Segments); i++ {
+	for i := insertIndex + len(segments); i < len(p.Segments); i++ {
 		if p.Segments[i] != nil {
 			p.Segments[i].SeqId += uint64(adjustment)
 		}
 	}
+
+	p.count += adjustment
+	p.capacity += adjustment
+	p.tail = p.count
+
 	p.buf.Reset()
 	return nil
 }
