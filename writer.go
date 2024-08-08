@@ -394,6 +394,17 @@ func (p *MediaPlaylist) InsertSegments(segments []*MediaSegment, seqID uint64) e
 	return nil
 }
 
+// SetMediaSegments takes in []*MediaSegment and sets the playlist segments to it
+// This operation does reset playlist cache
+func (p *MediaPlaylist) SetMediaSegments(segments []*MediaSegment) {
+	p.Segments = segments
+
+	p.count = uint(len(segments))
+	p.tail = p.count
+	p.capacity = p.count
+	p.buf.Reset()
+}
+
 // last returns the previously written segment's index
 func (p *MediaPlaylist) last() uint {
 	if p.tail == 0 {

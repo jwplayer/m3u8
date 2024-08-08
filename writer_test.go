@@ -1159,6 +1159,34 @@ func TestInsertSegments(t *testing.T) {
 	})
 }
 
+func TestSetMediaSegments(t *testing.T) {
+	p, e := NewMediaPlaylist(3, 4)
+	if e != nil {
+		t.Fatalf("Create media playlist failed: %s", e)
+	}
+	p.Close()
+	if e = p.Append("test01.ts", 5.0, ""); e != nil {
+		t.Errorf("Add 1st segment to a media playlist failed: %s", e)
+	}
+	if e = p.Append("test02.ts", 5.0, ""); e != nil {
+		t.Errorf("Add 2nd segment to a media playlist failed: %s", e)
+	}
+
+	newSegments := []*MediaSegment{
+		{SeqId: 1, URI: "test03.ts"},
+		{SeqId: 2, URI: "test04.ts"},
+	}
+
+	p.SetMediaSegments(newSegments)
+
+	require.Equal(t, 2, len(p.Segments))
+	require.Equal(t, uint(2), p.capacity)
+	require.Equal(t, uint(2), p.tail)
+	require.Equal(t, uint(2), p.count)
+	require.Equal(t, "test03.ts", p.Segments[0].URI)
+	require.Equal(t, "test04.ts", p.Segments[1].URI)
+}
+
 // Create new media playlist
 // Add three segments to media playlist
 // Set gap tag for the 2nd segment.
