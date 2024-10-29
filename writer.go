@@ -458,6 +458,17 @@ func (p *MediaPlaylist) Slide(uri string, duration float64, title string) {
 	p.Append(uri, duration, title)
 }
 
+// SlideSegment combines two operations: firstly it removes one chunk
+// from the head of chunk slice and move pointer to next chunk. Secondly
+// it appends a MediaSegment to the tail of chunk slice. Useful for sliding
+// playlists. This operation does reset cache.
+func (p *MediaPlaylist) SlideSegment(seg *MediaSegment) {
+	if !p.Closed && p.count >= p.winsize {
+		p.Remove()
+	}
+	p.AppendSegment(seg)
+}
+
 // ResetCache resets playlist cache. Next called Encode() will
 // regenerate playlist from the chunk slice.
 func (p *MediaPlaylist) ResetCache() {

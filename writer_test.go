@@ -750,6 +750,52 @@ func TestMediaPlaylist_Slide(t *testing.T) {
 	}
 }
 
+func TestMediaPlaylist_SlideSegment(t *testing.T) {
+	m, e := NewMediaPlaylist(4, 4)
+	if e != nil {
+		t.Fatalf("Failed to create media playlist: %v", e)
+	}
+
+	_ = m.Append("t00.ts", 10, "")
+	_ = m.Append("t01.ts", 10, "")
+	_ = m.Append("t02.ts", 10, "")
+	_ = m.Append("t03.ts", 10, "")
+	if m.Count() != 4 {
+		t.Fatalf("Excepted segments in media playlist: 4, got: %v", m.Count())
+	}
+	if m.SeqNo != 0 {
+		t.Errorf("Excepted SeqNo of media playlist: 0, got: %v", m.SeqNo)
+	}
+	var seqId, idx uint
+	for idx, seqId = 0, 0; idx < 3; idx, seqId = idx+1, seqId+1 {
+		segIdx := (m.head + idx) % m.capacity
+		segUri := fmt.Sprintf("t%02d.ts", seqId)
+		seg := m.Segments[segIdx]
+		if seg.URI != segUri || seg.SeqId != uint64(seqId) {
+			t.Errorf("Excepted segment: %s with SeqId: %v, got: %v/%v", segUri, seqId, seg.URI, seg.SeqId)
+		}
+	}
+
+	m.SlideSegment(&MediaSegment{URI: "t04.ts", Duration: 10, Title: "", Discontinuity: true})
+	if m.Count() != 4 {
+		t.Fatalf("Excepted segments in media playlist: 4, got: %v", m.Count())
+	}
+	if m.SeqNo != 1 {
+		t.Errorf("Excepted SeqNo of media playlist: 1, got: %v", m.SeqNo)
+	}
+	for idx, seqId = 0, 1; idx < 4; idx, seqId = idx+1, seqId+1 {
+		segIdx := (m.head + idx) % m.capacity
+		segUri := fmt.Sprintf("t%02d.ts", seqId)
+		seg := m.Segments[segIdx]
+		if seg.URI != segUri || seg.SeqId != uint64(seqId) {
+			t.Errorf("Excepted segment: %s with SeqId: %v, got: %v/%v", segUri, seqId, seg.URI, seg.SeqId)
+		}
+		if idx == 3 && !seg.Discontinuity {
+			t.Errorf("Excepted segment: %s with Discontinuity: true", segUri)
+		}
+	}
+}
+
 // Create new master playlist without params
 // Add media playlist
 func TestNewMasterPlaylist(t *testing.T) {
