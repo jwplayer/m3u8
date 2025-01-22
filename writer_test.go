@@ -13,7 +13,6 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"reflect"
 	"strings"
@@ -587,7 +586,7 @@ func TestClosedMediaPlaylist(t *testing.T) {
 // Create new media playlist as sliding playlist.
 func TestLargeMediaPlaylistWithParallel(t *testing.T) {
 	testCount := 10
-	expect, err := ioutil.ReadFile("sample-playlists/media-playlist-large.m3u8")
+	expect, err := os.ReadFile("sample-playlists/media-playlist-large.m3u8")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -609,7 +608,7 @@ func TestLargeMediaPlaylistWithParallel(t *testing.T) {
 			}
 
 			actual := p.Encode().Bytes() // disregard output
-			if bytes.Compare(expect, actual) != 0 {
+			if !bytes.Equal(expect, actual) {
 				t.Fatal("not matched")
 			}
 		}()
@@ -802,6 +801,35 @@ func TestNewMasterPlaylistWithAlternatives(t *testing.T) {
 	}
 }
 
+func TestNewMasterPlaylistWithSessionData(t *testing.T) {
+	m := NewMasterPlaylist()
+	m.SessionData = []SessionData{
+		{
+			DataID:   "com.example.movie.title",
+			Value:    "Example Movie",
+			Language: "en",
+		},
+		{
+			DataID: "com.example.movie.description",
+			URI:    "http://example.com/description.json",
+		},
+	}
+
+	var buf bytes.Buffer
+	m.buf = buf
+
+	output := m.Encode().String()
+	expected := `#EXTM3U
+#EXT-X-VERSION:3
+#EXT-X-SESSION-DATA:DATA-ID="com.example.movie.title",VALUE="Example Movie",LANGUAGE="en"
+#EXT-X-SESSION-DATA:DATA-ID="com.example.movie.description",URI="http://example.com/description.json"
+`
+
+	if output != expected {
+		t.Errorf("expected:\n%s\ngot:\n%s", expected, output)
+	}
+}
+
 // Create new master playlist supporting CLOSED-CAPTIONS=NONE
 func TestNewMasterPlaylistWithClosedCaptionEqNone(t *testing.T) {
 	m := NewMasterPlaylist()
@@ -819,7 +847,7 @@ func TestNewMasterPlaylistWithClosedCaptionEqNone(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Create media playlist failed: %s", err)
 	}
-	m.Append(fmt.Sprintf("eng_rendition_rendition.m3u8"), p, *vp)
+	m.Append("eng_rendition_rendition.m3u8", p, *vp)
 
 	expected := "CLOSED-CAPTIONS=NONE"
 	if !strings.Contains(m.String(), expected) {
@@ -828,7 +856,7 @@ func TestNewMasterPlaylistWithClosedCaptionEqNone(t *testing.T) {
 	// quotes need to be include if not eq NONE
 	vp.Captions = "CC1"
 	m2 := NewMasterPlaylist()
-	m2.Append(fmt.Sprintf("eng_rendition_rendition.m3u8"), p, *vp)
+	m2.Append("eng_rendition_rendition.m3u8", p, *vp)
 	expected = `CLOSED-CAPTIONS="CC1"`
 	if !strings.Contains(m2.String(), expected) {
 		t.Fatalf("Master playlist did not contain: %s\nMaster Playlist:\n%v", expected, m2.String())

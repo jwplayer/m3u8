@@ -95,6 +95,31 @@ func (p *MasterPlaylist) Encode() *bytes.Buffer {
 			}
 		}
 	}
+	
+	if p.SessionData != nil {
+		for _, sessionData := range p.SessionData {
+			p.buf.WriteString("#EXT-X-SESSION-DATA:")
+			p.buf.WriteString("DATA-ID=\"")
+			p.buf.WriteString(sessionData.DataID)
+			p.buf.WriteRune('"')
+			if sessionData.Value != "" {
+				p.buf.WriteString(",VALUE=\"")
+				p.buf.WriteString(sessionData.Value)
+				p.buf.WriteRune('"')
+			}
+			if sessionData.URI != "" {
+				p.buf.WriteString(",URI=\"")
+				p.buf.WriteString(sessionData.URI)
+				p.buf.WriteRune('"')
+			}
+			if sessionData.Language != "" {
+				p.buf.WriteString(",LANGUAGE=\"")
+				p.buf.WriteString(sessionData.Language)
+				p.buf.WriteRune('"')
+			}
+			p.buf.WriteRune('\n')
+		}
+	}
 
 	var altsWritten = make(map[string]bool)
 

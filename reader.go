@@ -195,7 +195,7 @@ func decode(buf *bytes.Buffer, strict bool, customDecoders []CustomDecoder) (Pla
 	master = NewMasterPlaylist()
 	media, err = NewMediaPlaylist(8, 1024) // Winsize for VoD will become 0, capacity auto extends
 	if err != nil {
-		return nil, 0, fmt.Errorf("Create media playlist failed: %s", err)
+		return nil, 0, fmt.Errorf("create media playlist failed: %s", err)
 	}
 
 	// If we have custom tags to parse
@@ -248,7 +248,7 @@ func decode(buf *bytes.Buffer, strict bool, customDecoders []CustomDecoder) (Pla
 		}
 		return media, MEDIA, nil
 	}
-	return nil, state.listType, errors.New("Can't detect playlist type")
+	return nil, state.listType, errors.New("can't detect playlist type")
 }
 
 // DecodeAttributeList turns an attribute list into a key, value map. You should trim
@@ -290,6 +290,28 @@ func decodeLineOfMasterPlaylist(p *MasterPlaylist, state *decodingState, line st
 	switch {
 	case line == "#EXTM3U": // start tag first
 		state.m3u = true
+	case strings.HasPrefix(line, "#EXT-X-SESSION-DATA:"): // session data tag
+		state.listType = MASTER
+		var sessionData SessionData
+		for k, v := range decodeParamsLine(line[20:]) {
+			switch k {
+			case "DATA-ID":
+				sessionData.DataID = v
+			case "VALUE":
+				sessionData.Value = v
+			case "URI":
+				sessionData.URI = v
+			case "LANGUAGE":
+				sessionData.Language = v
+			}
+		}
+		if (sessionData.Value == "" && sessionData.URI == "") || (sessionData.Value != "" && sessionData.URI != "") {
+			if strict {
+				return errors.New("either VALUE or URI must be present, but not both")
+			}
+		}
+		p.SessionData = append(p.SessionData, sessionData)
+
 	case strings.HasPrefix(line, "#EXT-X-VERSION:"): // version tag
 		state.listType = MASTER
 		_, err = fmt.Sscanf(line, "#EXT-X-VERSION:%d", &p.ver)
@@ -443,7 +465,6 @@ func decodeLineOfMasterPlaylist(p *MasterPlaylist, state *decodingState, line st
 				state.variant.HDCPLevel = v
 			}
 		}
-	case strings.HasPrefix(line, "#"):
 		// comments are ignored
 	}
 	return err
@@ -489,7 +510,7 @@ func decodeLineOfMediaPlaylist(p *MediaPlaylist, wv *WV, state *decodingState, l
 		duration := line[8:sepIndex]
 		if len(duration) > 0 {
 			if state.duration, err = strconv.ParseFloat(duration, 64); strict && err != nil {
-				return fmt.Errorf("Duration parsing error: %s", err)
+				return fmt.Errorf("duration parsing error: %s", err)
 			}
 		}
 		if len(line) > sepIndex {
@@ -626,7 +647,7 @@ func decodeLineOfMediaPlaylist(p *MediaPlaylist, wv *WV, state *decodingState, l
 			case "TIME-OFFSET":
 				st, err := strconv.ParseFloat(v, 64)
 				if err != nil {
-					return fmt.Errorf("Invalid TIME-OFFSET: %s: %v", v, err)
+					return fmt.Errorf("invalid TIME-OFFSET: %s: %v", v, err)
 				}
 				p.StartTime = st
 			case "PRECISE":
@@ -660,7 +681,7 @@ func decodeLineOfMediaPlaylist(p *MediaPlaylist, wv *WV, state *decodingState, l
 				state.xmap.URI = v
 			case "BYTERANGE":
 				if _, err = fmt.Sscanf(v, "%d@%d", &state.xmap.Limit, &state.xmap.Offset); strict && err != nil {
-					return fmt.Errorf("Byterange sub-range length value parsing error: %s", err)
+					return fmt.Errorf("byterange sub-range length value parsing error: %s", err)
 				}
 			}
 		}
@@ -727,11 +748,11 @@ func decodeLineOfMediaPlaylist(p *MediaPlaylist, wv *WV, state *decodingState, l
 		state.offset = 0
 		params := strings.SplitN(line[17:], "@", 2)
 		if state.limit, err = strconv.ParseInt(params[0], 10, 64); strict && err != nil {
-			return fmt.Errorf("Byterange sub-range length value parsing error: %s", err)
+			return fmt.Errorf("byterange sub-range length value parsing error: %s", err)
 		}
 		if len(params) > 1 {
 			if state.offset, err = strconv.ParseInt(params[1], 10, 64); strict && err != nil {
-				return fmt.Errorf("Byterange sub-range offset value parsing error: %s", err)
+				return fmt.Errorf("byterange sub-range offset value parsing error: %s", err)
 			}
 		}
 	case !state.tagSCTE35 && strings.HasPrefix(line, "#EXT-SCTE35:"):
@@ -893,7 +914,6 @@ func decodeLineOfMediaPlaylist(p *MediaPlaylist, wv *WV, state *decodingState, l
 		if err == nil {
 			state.tagWV = true
 		}
-	case strings.HasPrefix(line, "#"):
 		// comments are ignored
 	}
 	return err
