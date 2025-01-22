@@ -305,13 +305,22 @@ func decodeLineOfMasterPlaylist(p *MasterPlaylist, state *decodingState, line st
 				sessionData.Language = v
 			}
 		}
+		// EXT-X-SESSION-DATA tag MUST contain either a VALUE or URI attribute, but not both.
 		if (sessionData.Value == "" && sessionData.URI == "") || (sessionData.Value != "" && sessionData.URI != "") {
 			if strict {
 				return errors.New("either VALUE or URI must be present, but not both")
 			}
 		}
+		// A Playlist MUST NOT contain more than one EXT-X-SESSION-DATA tag with the
+		// same DATA-ID attribute and the same LANGUAGE attribute.
+		for _, sd := range p.SessionData {
+			if sd.DataID == sessionData.DataID && sd.Language == sessionData.Language {
+				if strict {
+					return errors.New("duplicate EXT-X-SESSION-DATA tag with the same DATA-ID and LANGUAGE")
+				}
+			}
+		}
 		p.SessionData = append(p.SessionData, sessionData)
-
 	case strings.HasPrefix(line, "#EXT-X-VERSION:"): // version tag
 		state.listType = MASTER
 		_, err = fmt.Sscanf(line, "#EXT-X-VERSION:%d", &p.ver)
