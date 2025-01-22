@@ -166,6 +166,7 @@ type Variant struct {
 	VariantParams
 }
 
+// SessionData structure represents EXT-X-SESSION-DATA tag in the master playlist.
 type SessionData struct {
 	DataID   string
 	Value    string
