@@ -292,7 +292,7 @@ func decodeLineOfMasterPlaylist(p *MasterPlaylist, state *decodingState, line st
 		state.m3u = true
 	case strings.HasPrefix(line, "#EXT-X-SESSION-DATA:"): // session data tag
 		state.listType = MASTER
-		var sessionData SessionData
+		sessionData := new(SessionData)
 		for k, v := range decodeParamsLine(line[20:]) {
 			switch k {
 			case "DATA-ID":

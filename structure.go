@@ -147,7 +147,7 @@ type MediaPlaylist struct {
 //	http://example.com/audio-only.m3u8
 type MasterPlaylist struct {
 	Variants            []*Variant
-	SessionData         []SessionData
+	SessionData         []*SessionData
 	Args                string // optional arguments placed after URI (URI?Args)
 	CypherVersion       string // non-standard tag for Widevine (see also WV struct)
 	buf                 bytes.Buffer

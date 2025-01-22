@@ -803,7 +803,7 @@ func TestNewMasterPlaylistWithAlternatives(t *testing.T) {
 
 func TestNewMasterPlaylistWithSessionData(t *testing.T) {
 	m := NewMasterPlaylist()
-	m.SessionData = []SessionData{
+	m.SessionData = []*SessionData{
 		{
 			DataID:   "com.example.movie.title",
 			Value:    "Example Movie",
