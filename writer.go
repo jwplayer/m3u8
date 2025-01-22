@@ -95,9 +95,19 @@ func (p *MasterPlaylist) Encode() *bytes.Buffer {
 			}
 		}
 	}
-	
+
+	var languageWritten = make(map[string]bool)
 	if p.SessionData != nil {
 		for _, sessionData := range p.SessionData {
+			// make sure that the same data id and language is not written twice
+			if sessionData.Language != "" {
+				languageWrittenKey := strings.ToLower(sessionData.DataID) + "-" + strings.ToLower(sessionData.Language)
+				if languageWritten[languageWrittenKey] {
+					continue
+				}
+				languageWritten[languageWrittenKey] = true
+			}
+
 			p.buf.WriteString("#EXT-X-SESSION-DATA:")
 			p.buf.WriteString("DATA-ID=\"")
 			p.buf.WriteString(sessionData.DataID)
@@ -107,7 +117,9 @@ func (p *MasterPlaylist) Encode() *bytes.Buffer {
 				p.buf.WriteString(sessionData.Value)
 				p.buf.WriteRune('"')
 			}
-			if sessionData.URI != "" {
+			// Each EXT-X-SESSION-DATA tag MUST contain either a VALUE or URI attribute, but not both.
+			// In case both are present, default to writing only the VALUE attribute.
+			if sessionData.URI != "" && sessionData.Value == "" {
 				p.buf.WriteString(",URI=\"")
 				p.buf.WriteString(sessionData.URI)
 				p.buf.WriteRune('"')
