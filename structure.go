@@ -147,6 +147,7 @@ type MediaPlaylist struct {
 //	http://example.com/audio-only.m3u8
 type MasterPlaylist struct {
 	Variants            []*Variant
+	SessionData         []*SessionData
 	Args                string // optional arguments placed after URI (URI?Args)
 	CypherVersion       string // non-standard tag for Widevine (see also WV struct)
 	buf                 bytes.Buffer
@@ -163,6 +164,14 @@ type Variant struct {
 	URI       string
 	Chunklist *MediaPlaylist
 	VariantParams
+}
+
+// SessionData structure represents EXT-X-SESSION-DATA tag in the master playlist.
+type SessionData struct {
+	DataID   string
+	Value    string
+	URI      string
+	Language string
 }
 
 // VariantParams structure represents additional parameters for a

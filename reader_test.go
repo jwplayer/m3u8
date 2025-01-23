@@ -41,6 +41,86 @@ func TestDecodeMasterPlaylist(t *testing.T) {
 	// fmt.Println(p.Encode().String())
 }
 
+func TestDecodeMasterPlaylist_WithSessionData(t *testing.T) {
+	f, err := os.Open("sample-playlists/master-with-session-data.m3u8")
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := NewMasterPlaylist()
+	err = p.DecodeFrom(bufio.NewReader(f), false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// check parsed values
+	if p.ver != 3 {
+		t.Errorf("Version of parsed playlist = %d (must = 3)", p.ver)
+	}
+	if len(p.Variants) != 5 {
+		t.Error("Not all variants in master playlist parsed.")
+	}
+
+	if len(p.SessionData) < 1 {
+		t.Error("Session data has not been parsed.")
+	}
+
+	// check specific session data values
+	expectedSessionData := []SessionData{
+		{
+			DataID:   "com.example.movie.title",
+			Value:    "Example Movie",
+			Language: "en",
+		},
+		{
+			DataID: "com.example.movie.description",
+			URI:    "http://example.com/description.json",
+		},
+	}
+
+	for i, expected := range expectedSessionData {
+		if i >= len(p.SessionData) {
+			t.Errorf("Missing session data entry: %+v", expected)
+			continue
+		}
+		actual := p.SessionData[i]
+		if actual.DataID != expected.DataID {
+			t.Errorf("SessionData[%d].DataID = %s, want %s", i, actual.DataID, expected.DataID)
+		}
+		if actual.Value != expected.Value {
+			t.Errorf("SessionData[%d].Value = %s, want %s", i, actual.Value, expected.Value)
+		}
+		if actual.URI != expected.URI {
+			t.Errorf("SessionData[%d].URI = %s, want %s", i, actual.URI, expected.URI)
+		}
+		if actual.Language != expected.Language {
+			t.Errorf("SessionData[%d].Language = %s, want %s", i, actual.Language, expected.Language)
+		}
+	}
+}
+
+func TestDecodeMasterPlaylist_WithBothValueAndURI(t *testing.T) {
+	f, err := os.Open("sample-playlists/master-with-session-data-with-uri-and-value.m3u8")
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := NewMasterPlaylist()
+	err = p.DecodeFrom(bufio.NewReader(f), true)
+	if err == nil {
+		t.Error("Expected error when strict mode is enabled.")
+	}
+}
+
+func TestDecodeMasterPlaylist_WithDuplicateDataIDAndLanguage(t *testing.T) {
+	f, err := os.Open("sample-playlists/master-with-session-data-with-duplicate-data-id-and-language.m3u8")
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := NewMasterPlaylist()
+	err = p.DecodeFrom(bufio.NewReader(f), true)
+	if err == nil {
+		t.Error("Expected error when strict mode is enabled.")
+	}
+}
+
 func TestDecodeMasterPlaylistWithMultipleCodecs(t *testing.T) {
 	f, err := os.Open("sample-playlists/master-with-multiple-codecs.m3u8")
 	if err != nil {
