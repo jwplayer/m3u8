@@ -474,7 +474,6 @@ func decodeLineOfMasterPlaylist(p *MasterPlaylist, state *decodingState, line st
 				state.variant.HDCPLevel = v
 			}
 		}
-		// comments are ignored
 	}
 	return err
 }
@@ -923,7 +922,6 @@ func decodeLineOfMediaPlaylist(p *MediaPlaylist, wv *WV, state *decodingState, l
 		if err == nil {
 			state.tagWV = true
 		}
-		// comments are ignored
 	}
 	return err
 }
