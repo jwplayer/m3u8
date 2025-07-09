@@ -1484,3 +1484,34 @@ func TestMediaPlaylistWithoutIndependentSegments(t *testing.T) {
 	// #EXTINF:5.000,
 	// test2.ts
 }
+
+func TestMediaPlaylistDefine(t *testing.T) {
+	p, _ := NewMediaPlaylist(3, 5)
+	p.SetVersion(7)
+	p.Define = append(p.Define, &Define{
+		Name: "somevar", Value: "someval",
+	})
+	p.Define = append(p.Define, &Define{
+		Import: "someimport",
+	})
+	encoded := p.Encode().String()
+	if !strings.Contains(encoded, "#EXT-X-DEFINE:NAME=\"somevar\",VALUE=\"someval\"") {
+		t.Error("Expected playlist to contain #EXT-X-DEFINE:NAME=\"somevar\",VALUE=\"someval\" tag")
+	}
+	if !strings.Contains(encoded, "#EXT-X-DEFINE:IMPORT=\"someimport\"") {
+		t.Error("Expected playlist to contain #EXT-X-DEFINE:IMPORT=\"someimport\"")
+	}
+}
+
+func TestMasterPlaylistDefine(t *testing.T) {
+	p := NewMasterPlaylist()
+	p.SetVersion(7)
+	p.Define = append(p.Define, &Define{
+		Name: "somevar", Value: "someval",
+	})
+
+	encoded := p.Encode().String()
+	if !strings.Contains(encoded, "#EXT-X-DEFINE:NAME=\"somevar\",VALUE=\"someval\"") {
+		t.Error("Expected playlist to contain #EXT-X-DEFINE:NAME=\"somevar\",VALUE=\"someval\" tag")
+	}
+}

@@ -97,6 +97,67 @@ func TestDecodeMasterPlaylist_WithSessionData(t *testing.T) {
 	}
 }
 
+func TestDecodeMasterPlaylist_WithDefine(t *testing.T) {
+	f, err := os.Open("sample-playlists/master-with-define.m3u8")
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := NewMasterPlaylist()
+	err = p.DecodeFrom(bufio.NewReader(f), false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for i, expected := range []Define{
+		{
+			Name:  "somevar",
+			Value: "someval",
+		},
+	} {
+		if p.Define[i].Name != expected.Name {
+			t.Errorf("EXT-X-DEFINE Name = %s, want %s", p.Define[i].Name, expected.Name)
+		}
+		if p.Define[i].Value != expected.Value {
+			t.Errorf("EXT-X-DEFINE Value = %s, want %s", p.Define[i].Value, expected.Value)
+		}
+		if p.Define[i].Import != expected.Import {
+			t.Errorf("EXT-X-DEFINE Import = %s, want %s", p.Define[i].Import, expected.Import)
+		}
+	}
+}
+
+func TestDecodeMediaPlaylist_WithDefine(t *testing.T) {
+	f, err := os.Open("sample-playlists/media-with-define.m3u8")
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, _ := NewMediaPlaylist(1, 1)
+	err = p.DecodeFrom(bufio.NewReader(f), false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for i, expected := range []Define{
+		{
+			Name:  "somevar",
+			Value: "someval",
+		},
+		{
+			Import: "mastervar",
+		},
+	} {
+		if p.Define[i].Name != expected.Name {
+			t.Errorf("EXT-X-DEFINE Name = %s, want %s", p.Define[i].Name, expected.Name)
+		}
+		if p.Define[i].Value != expected.Value {
+			t.Errorf("EXT-X-DEFINE Value = %s, want %s", p.Define[i].Value, expected.Value)
+		}
+		if p.Define[i].Import != expected.Import {
+			t.Errorf("EXT-X-DEFINE Import = %s, want %s", p.Define[i].Import, expected.Import)
+		}
+	}
+}
+
 func TestDecodeMasterPlaylist_WithBothValueAndURI(t *testing.T) {
 	f, err := os.Open("sample-playlists/master-with-session-data-with-uri-and-value.m3u8")
 	if err != nil {

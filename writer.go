@@ -133,6 +133,21 @@ func (p *MasterPlaylist) Encode() *bytes.Buffer {
 		}
 	}
 
+	if p.Define != nil {
+		for _, define := range p.Define {
+			if define.Name != "" && define.Value != "" {
+				p.buf.WriteString("#EXT-X-DEFINE:")
+				p.buf.WriteString("NAME=\"")
+				p.buf.WriteString(define.Name)
+				p.buf.WriteRune('"')
+				p.buf.WriteString(",VALUE=\"")
+				p.buf.WriteString(define.Value)
+				p.buf.WriteRune('"')
+			}
+			p.buf.WriteRune('\n')
+		}
+	}
+
 	var altsWritten = make(map[string]bool)
 
 	for _, pl := range p.Variants {
@@ -546,6 +561,26 @@ func (p *MediaPlaylist) Encode() *bytes.Buffer {
 				p.buf.WriteString(customBuf.String())
 				p.buf.WriteRune('\n')
 			}
+		}
+	}
+
+	if p.Define != nil {
+		for _, define := range p.Define {
+			if define.Name != "" && define.Value != "" {
+				p.buf.WriteString("#EXT-X-DEFINE:")
+				p.buf.WriteString("NAME=\"")
+				p.buf.WriteString(define.Name)
+				p.buf.WriteRune('"')
+				p.buf.WriteString(",VALUE=\"")
+				p.buf.WriteString(define.Value)
+				p.buf.WriteRune('"')
+			} else if define.Import != "" {
+				p.buf.WriteString("#EXT-X-DEFINE:")
+				p.buf.WriteString("IMPORT=\"")
+				p.buf.WriteString(define.Import)
+				p.buf.WriteRune('"')
+			}
+			p.buf.WriteRune('\n')
 		}
 	}
 

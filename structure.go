@@ -130,6 +130,7 @@ type MediaPlaylist struct {
 	WV                  *WV  // Widevine related tags outside of M3U8 specs
 	Custom              map[string]CustomTag
 	customDecoders      []CustomDecoder
+	Define              []*Define // EXT-X-DEFINE
 }
 
 // MasterPlaylist structure represents a master playlist which
@@ -155,6 +156,7 @@ type MasterPlaylist struct {
 	independentSegments bool
 	Custom              map[string]CustomTag
 	customDecoders      []CustomDecoder
+	Define              []*Define // EXT-X-DEFINE
 }
 
 // Variant structure represents variants for master playlist.
@@ -172,6 +174,13 @@ type SessionData struct {
 	Value    string
 	URI      string
 	Language string
+}
+
+// Define structure represents #EXT-X-DEFINE
+type Define struct {
+	Value  string
+	Name   string
+	Import string
 }
 
 // VariantParams structure represents additional parameters for a
