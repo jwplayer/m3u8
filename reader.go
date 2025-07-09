@@ -293,7 +293,7 @@ func decodeLineOfMasterPlaylist(p *MasterPlaylist, state *decodingState, line st
 	case strings.HasPrefix(line, "#EXT-X-DEFINE:"): // session data tag
 		state.listType = MASTER
 		define := new(Define)
-		for k, v := range decodeParamsLine(line[20:]) {
+		for k, v := range decodeParamsLine(line[14:]) {
 			switch k {
 			case "NAME":
 				define.Name = v
@@ -663,7 +663,7 @@ func decodeLineOfMediaPlaylist(p *MediaPlaylist, wv *WV, state *decodingState, l
 	case strings.HasPrefix(line, "#EXT-X-DEFINE:"): // session data tag
 		state.listType = MEDIA
 		define := new(Define)
-		for k, v := range decodeParamsLine(line[20:]) {
+		for k, v := range decodeParamsLine(line[14:]) {
 			switch k {
 			case "NAME":
 				define.Name = v
