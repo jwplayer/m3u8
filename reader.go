@@ -290,6 +290,18 @@ func decodeLineOfMasterPlaylist(p *MasterPlaylist, state *decodingState, line st
 	switch {
 	case line == "#EXTM3U": // start tag first
 		state.m3u = true
+	case strings.HasPrefix(line, "#EXT-X-DEFINE:"): // session data tag
+		state.listType = MASTER
+		define := new(Define)
+		for k, v := range decodeParamsLine(line[20:]) {
+			switch k {
+			case "NAME":
+				define.Name = v
+			case "VALUE":
+				define.Value = v
+			}
+		}
+		p.Define = append(p.Define, define)
 	case strings.HasPrefix(line, "#EXT-X-SESSION-DATA:"): // session data tag
 		state.listType = MASTER
 		sessionData := new(SessionData)
@@ -648,6 +660,20 @@ func decodeLineOfMediaPlaylist(p *MediaPlaylist, wv *WV, state *decodingState, l
 		if _, err = fmt.Sscanf(line, "#EXT-X-DISCONTINUITY-SEQUENCE:%d", &p.DiscontinuitySeq); strict && err != nil {
 			return err
 		}
+	case strings.HasPrefix(line, "#EXT-X-DEFINE:"): // session data tag
+		state.listType = MEDIA
+		define := new(Define)
+		for k, v := range decodeParamsLine(line[20:]) {
+			switch k {
+			case "NAME":
+				define.Name = v
+			case "VALUE":
+				define.Value = v
+			case "IMPORT":
+				define.Import = v
+			}
+		}
+		p.Define = append(p.Define, define)
 	case strings.HasPrefix(line, "#EXT-X-START:"):
 		state.listType = MEDIA
 		for k, v := range decodeParamsLine(line[13:]) {
