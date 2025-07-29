@@ -758,6 +758,12 @@ func decodeLineOfMediaPlaylist(p *MediaPlaylist, wv *WV, state *decodingState, l
 				dr.XSnap = v
 			case "X-RESTRICT":
 				dr.XRestrict = v
+			case "X-CONTENT-MAY-VARY":
+				dr.XContentMayVary = v
+			case "X-TIMELINE-OCCUPIES":
+				dr.XTimelineOccupies = v
+			case "X-TIMELINE-STYLE":
+				dr.XTimelineStyle = v
 			case "X-ASSET-URI":
 				dr.XAssetURI = v
 			case "X-ASSET-LIST":

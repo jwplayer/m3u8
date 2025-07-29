@@ -857,11 +857,11 @@ func (p *MediaPlaylist) Encode() *bytes.Buffer {
 				}
 				if dr.XResumeOfsset > 0 {
 					p.buf.WriteString(",X-RESUME-OFFSET=")
-					p.buf.WriteString(strconv.FormatFloat(dr.Duration, 'f', -1, 64))
+					p.buf.WriteString(strconv.FormatFloat(dr.XResumeOfsset, 'f', -1, 64))
 				}
 				if dr.XPlayoutLimit > 0 {
 					p.buf.WriteString(",X-PLAYOUT-LIMIT=")
-					p.buf.WriteString(strconv.FormatFloat(dr.Duration, 'f', -1, 64))
+					p.buf.WriteString(strconv.FormatFloat(dr.XPlayoutLimit, 'f', -1, 64))
 				}
 				if dr.XSnap != "" {
 					p.buf.WriteString(",X-SNAP=\"")
@@ -870,6 +870,21 @@ func (p *MediaPlaylist) Encode() *bytes.Buffer {
 				}
 				if dr.XRestrict != "" {
 					p.buf.WriteString(",X-RESTRICT=\"")
+					p.buf.WriteString(dr.XRestrict)
+					p.buf.WriteRune('"')
+				}
+				if dr.XContentMayVary != "" {
+					p.buf.WriteString(",X-CONTENT-MAY-VARY=\"")
+					p.buf.WriteString(dr.XRestrict)
+					p.buf.WriteRune('"')
+				}
+				if dr.XTimelineOccupies != "" {
+					p.buf.WriteString(",X-TIMELINE-OCCUPIES=\"")
+					p.buf.WriteString(dr.XRestrict)
+					p.buf.WriteRune('"')
+				}
+				if dr.XTimelineStyle != "" {
+					p.buf.WriteString(",X-TIMELINE-STYLE=\"")
 					p.buf.WriteString(dr.XRestrict)
 					p.buf.WriteRune('"')
 				}

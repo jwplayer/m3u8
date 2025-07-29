@@ -251,23 +251,26 @@ type SCTE struct {
 
 // DateRange holds the EXT-X-DATERANGE attributes specified in 4.3.2.7 https://datatracker.ietf.org/doc/html/draft-pantos-http-live-streaming
 type DateRange struct {
-	ID              string
-	Class           string
-	StartDate       time.Time
-	EndDate         time.Time
-	Duration        float64
-	PlannedDuration float64
-	X               map[string]string // X-" prefixed client-defined attributes
-	SCTE35Cmd       string
-	SCTE35In        string
-	SCTE35Out       string
-	EndOnNext       string
-	XAssetURI       string
-	XAssetList      string
-	XResumeOfsset   float64
-	XPlayoutLimit   float64
-	XSnap           string
-	XRestrict       string
+	ID                string
+	Class             string
+	StartDate         time.Time
+	EndDate           time.Time
+	Duration          float64
+	PlannedDuration   float64
+	X                 map[string]string // X-" prefixed client-defined attributes
+	SCTE35Cmd         string
+	SCTE35In          string
+	SCTE35Out         string
+	EndOnNext         string
+	XAssetURI         string
+	XAssetList        string
+	XResumeOfsset     float64
+	XPlayoutLimit     float64
+	XSnap             string
+	XRestrict         string
+	XTimelineOccupies string
+	XTimelineStyle    string
+	XContentMayVary   string
 }
 
 // Key structure represents information about stream encryption.
