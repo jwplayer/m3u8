@@ -809,6 +809,12 @@ func (p *MediaPlaylist) Encode() *bytes.Buffer {
 			}
 			p.buf.WriteRune('\n')
 		}
+		if seg.Discontinuity {
+			p.buf.WriteString("#EXT-X-DISCONTINUITY\n")
+		}
+		if seg.Gap {
+			p.buf.WriteString("#EXT-X-GAP\n")
+		}
 		if len(seg.DateRange) > 0 {
 			for _, dr := range seg.DateRange {
 				p.buf.WriteString("#EXT-X-DATERANGE:")
@@ -907,12 +913,6 @@ func (p *MediaPlaylist) Encode() *bytes.Buffer {
 				}
 				p.buf.WriteString("\n")
 			}
-		}
-		if seg.Discontinuity {
-			p.buf.WriteString("#EXT-X-DISCONTINUITY\n")
-		}
-		if seg.Gap {
-			p.buf.WriteString("#EXT-X-GAP\n")
 		}
 		// ignore segment Map if default playlist Map is present
 		if p.Map == nil && seg.Map != nil {
