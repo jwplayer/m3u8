@@ -819,6 +819,28 @@ func TestMediaPlaylistWithDATERANAGETagsForInterstitials(t *testing.T) {
 	}
 }
 
+func TestMediaPlaylistWithDATERANAGETagsForInterstitialsAfterEndlist(t *testing.T) {
+	f, err := os.Open("sample-playlists/media-playlist-with-interstitials-after-endlist.m3u8")
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, _, err := DecodeFrom(bufio.NewReader(f), true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pp := p.(*MediaPlaylist)
+
+	// fmt.Println(pp.Encode())
+
+	if len(pp.DateRange) != 2 {
+		t.Error("missing playlist DateRange")
+	}
+
+	if len(pp.Segments[1792].DateRange) != 1 {
+		t.Error("missing segment DateRange")
+	}
+}
+
 func TestDecodeMediaPlaylistWithDiscontinuitySeq(t *testing.T) {
 	f, err := os.Open("sample-playlists/media-playlist-with-discontinuity-seq.m3u8")
 	if err != nil {

@@ -955,6 +955,13 @@ func decodeLineOfMediaPlaylist(p *MediaPlaylist, wv *WV, state *decodingState, l
 			state.tagWV = true
 		}
 	}
+
+	if len(state.daterange) > 0 && p.Closed {
+		// daterange tags not associated with a given segmenet
+		p.DateRange = append(p.DateRange, state.daterange...)
+		state.daterange = []*DateRange{}
+	}
+
 	return err
 }
 
