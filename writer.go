@@ -861,7 +861,11 @@ func (p *MediaPlaylist) Encode() *bytes.Buffer {
 					p.buf.WriteString(dr.EndOnNext)
 					p.buf.WriteRune('"')
 				}
-				if dr.XResumeOfsset > 0 {
+				// X-RESUME-OFFSET=0 is very commonly used,
+				// it indicates ads must be inserted without
+				// replacing any underlying content.
+				// Use a negative value to omit it output.
+				if dr.XResumeOfsset > -1 {
 					p.buf.WriteString(",X-RESUME-OFFSET=")
 					p.buf.WriteString(strconv.FormatFloat(dr.XResumeOfsset, 'f', -1, 64))
 				}

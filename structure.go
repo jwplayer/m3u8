@@ -264,7 +264,7 @@ type DateRange struct {
 	EndOnNext         string
 	XAssetURI         string
 	XAssetList        string
-	XResumeOfsset     float64
+	XResumeOfsset     float64 // use a negative value to omit it output
 	XPlayoutLimit     float64
 	XSnap             string
 	XRestrict         string
