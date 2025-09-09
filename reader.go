@@ -751,7 +751,7 @@ func decodeLineOfMediaPlaylist(p *MediaPlaylist, wv *WV, state *decodingState, l
 			case "END-ON-NEXT":
 				dr.EndOnNext = v
 			case "X-RESUME-OFFSET":
-				dr.XResumeOfsset, _ = strconv.ParseFloat(v, 64)
+				dr.XResumeOffset, _ = strconv.ParseFloat(v, 64)
 			case "X-PLAYOUT-LIMIT":
 				dr.XPlayoutLimit, _ = strconv.ParseFloat(v, 64)
 			case "X-SNAP":

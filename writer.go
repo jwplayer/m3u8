@@ -940,9 +940,9 @@ func writeDaterange(buf *bytes.Buffer, dr *DateRange) {
 	// it indicates ads must be inserted without
 	// replacing any underlying content.
 	// Use a negative value to omit it output.
-	if dr.XResumeOfsset > -1 {
+	if dr.XResumeOffset > -1 {
 		buf.WriteString(",X-RESUME-OFFSET=")
-		buf.WriteString(strconv.FormatFloat(dr.XResumeOfsset, 'f', -1, 64))
+		buf.WriteString(strconv.FormatFloat(dr.XResumeOffset, 'f', -1, 64))
 	}
 	if dr.XPlayoutLimit > 0 {
 		buf.WriteString(",X-PLAYOUT-LIMIT=")
