@@ -1055,7 +1055,7 @@ func TestEncodeMediaPlaylistDateRangeTagsForInterstitials(t *testing.T) {
 		ID:            "123",
 		StartDate:     st,
 		Duration:      24.2,
-		XResumeOfsset: 24.2,
+		XResumeOffset: 24.2,
 		XPlayoutLimit: 24.2,
 		XSnap:         "OUT,IN",
 		XRestrict:     "SKIP,JUMP",

@@ -751,13 +751,19 @@ func decodeLineOfMediaPlaylist(p *MediaPlaylist, wv *WV, state *decodingState, l
 			case "END-ON-NEXT":
 				dr.EndOnNext = v
 			case "X-RESUME-OFFSET":
-				dr.XResumeOfsset, _ = strconv.ParseFloat(v, 64)
+				dr.XResumeOffset, _ = strconv.ParseFloat(v, 64)
 			case "X-PLAYOUT-LIMIT":
 				dr.XPlayoutLimit, _ = strconv.ParseFloat(v, 64)
 			case "X-SNAP":
 				dr.XSnap = v
 			case "X-RESTRICT":
 				dr.XRestrict = v
+			case "X-CONTENT-MAY-VARY":
+				dr.XContentMayVary = v
+			case "X-TIMELINE-OCCUPIES":
+				dr.XTimelineOccupies = v
+			case "X-TIMELINE-STYLE":
+				dr.XTimelineStyle = v
 			case "X-ASSET-URI":
 				dr.XAssetURI = v
 			case "X-ASSET-LIST":
@@ -949,6 +955,13 @@ func decodeLineOfMediaPlaylist(p *MediaPlaylist, wv *WV, state *decodingState, l
 			state.tagWV = true
 		}
 	}
+
+	if len(state.daterange) > 0 && p.Closed {
+		// daterange tags not associated with a given segment
+		p.DateRange = append(p.DateRange, state.daterange...)
+		state.daterange = []*DateRange{}
+	}
+
 	return err
 }
 

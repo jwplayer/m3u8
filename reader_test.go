@@ -788,7 +788,7 @@ func TestMediaPlaylistWithDATERANAGETagsForInterstitials(t *testing.T) {
 	d1, _ := time.Parse(time.RFC3339, "2022-01-01T00:00:00.222222Z")
 	expect := map[int][]*DateRange{
 		1: {
-			{ID: "123", StartDate: d1, Duration: 24.2, XResumeOfsset: 24.2, XPlayoutLimit: 24.2, XSnap: "OUT,IN", XRestrict: "SKIP,JUMP", XAssetURI: "ad1.m3u8", XAssetList: "ads.json"},
+			{ID: "123", StartDate: d1, Duration: 24.2, XResumeOffset: 24.2, XPlayoutLimit: 24.2, XSnap: "OUT,IN", XRestrict: "SKIP,JUMP", XAssetURI: "ad1.m3u8", XAssetList: "ads.json"},
 		},
 	}
 
@@ -800,8 +800,8 @@ func TestMediaPlaylistWithDATERANAGETagsForInterstitials(t *testing.T) {
 			if v[j].Duration != dr.Duration {
 				t.Errorf("daterange comparison error Duration %f != %f", v[j].Duration, dr.Duration)
 			}
-			if v[j].XResumeOfsset != dr.XResumeOfsset {
-				t.Errorf("daterange comparison error XResumeOfsset %f != %f", v[j].XResumeOfsset, dr.XResumeOfsset)
+			if v[j].XResumeOffset != dr.XResumeOffset {
+				t.Errorf("daterange comparison error XResumeOffset %f != %f", v[j].XResumeOffset, dr.XResumeOffset)
 			}
 			if v[j].XPlayoutLimit != dr.XPlayoutLimit {
 				t.Errorf("daterange comparison error XPlayoutLimit %f != %f", v[j].XPlayoutLimit, dr.XPlayoutLimit)
@@ -816,6 +816,28 @@ func TestMediaPlaylistWithDATERANAGETagsForInterstitials(t *testing.T) {
 				t.Errorf("daterange comparison error SCTE35In %s != %s", v[j].XAssetURI, dr.XAssetURI)
 			}
 		}
+	}
+}
+
+func TestMediaPlaylistWithDATERANAGETagsForInterstitialsAfterEndlist(t *testing.T) {
+	f, err := os.Open("sample-playlists/media-playlist-with-interstitials-after-endlist.m3u8")
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, _, err := DecodeFrom(bufio.NewReader(f), true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pp := p.(*MediaPlaylist)
+
+	// fmt.Println(pp.Encode())
+
+	if len(pp.DateRange) != 2 {
+		t.Error("missing playlist DateRange")
+	}
+
+	if len(pp.Segments[1792].DateRange) != 1 {
+		t.Error("missing segment DateRange")
 	}
 }
 

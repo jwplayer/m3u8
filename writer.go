@@ -809,95 +809,16 @@ func (p *MediaPlaylist) Encode() *bytes.Buffer {
 			}
 			p.buf.WriteRune('\n')
 		}
-		if len(seg.DateRange) > 0 {
-			for _, dr := range seg.DateRange {
-				p.buf.WriteString("#EXT-X-DATERANGE:")
-				p.buf.WriteString("ID=\"")
-				p.buf.WriteString(dr.ID)
-				p.buf.WriteRune('"')
-				if dr.Class != "" {
-					p.buf.WriteString(",CLASS=\"")
-					p.buf.WriteString(dr.Class)
-					p.buf.WriteRune('"')
-				}
-				if !dr.StartDate.IsZero() {
-					p.buf.WriteString(",START-DATE=\"")
-					p.buf.WriteString(dr.StartDate.Format(DATETIME))
-					p.buf.WriteRune('"')
-				}
-				if !dr.EndDate.IsZero() {
-					p.buf.WriteString(",END-DATE=\"")
-					p.buf.WriteString(dr.EndDate.Format(DATETIME))
-					p.buf.WriteRune('"')
-				}
-				if dr.Duration > 0 {
-					p.buf.WriteString(",DURATION=")
-					p.buf.WriteString(strconv.FormatFloat(dr.Duration, 'f', -1, 64))
-				}
-				if dr.PlannedDuration > 0 {
-					p.buf.WriteString(",PLANNED-DURATION=")
-					p.buf.WriteString(strconv.FormatFloat(dr.PlannedDuration, 'f', -1, 64))
-				}
-				if dr.SCTE35Cmd != "" {
-					p.buf.WriteString(",SCTE35-CMD=")
-					p.buf.WriteString(dr.SCTE35Cmd)
-				}
-				if dr.SCTE35In != "" {
-					p.buf.WriteString(",SCTE35-IN=")
-					p.buf.WriteString(dr.SCTE35In)
-				}
-				if dr.SCTE35Out != "" {
-					p.buf.WriteString(",SCTE35-OUT=")
-					p.buf.WriteString(dr.SCTE35Out)
-				}
-				if dr.EndOnNext != "" {
-					p.buf.WriteString(",END-ON-NEXT=\"")
-					p.buf.WriteString(dr.EndOnNext)
-					p.buf.WriteRune('"')
-				}
-				if dr.XResumeOfsset > 0 {
-					p.buf.WriteString(",X-RESUME-OFFSET=")
-					p.buf.WriteString(strconv.FormatFloat(dr.Duration, 'f', -1, 64))
-				}
-				if dr.XPlayoutLimit > 0 {
-					p.buf.WriteString(",X-PLAYOUT-LIMIT=")
-					p.buf.WriteString(strconv.FormatFloat(dr.Duration, 'f', -1, 64))
-				}
-				if dr.XSnap != "" {
-					p.buf.WriteString(",X-SNAP=\"")
-					p.buf.WriteString(dr.XSnap)
-					p.buf.WriteRune('"')
-				}
-				if dr.XRestrict != "" {
-					p.buf.WriteString(",X-RESTRICT=\"")
-					p.buf.WriteString(dr.XRestrict)
-					p.buf.WriteRune('"')
-				}
-				if dr.XAssetURI != "" {
-					p.buf.WriteString(",X-ASSET-URI=\"")
-					p.buf.WriteString(dr.XAssetURI)
-					p.buf.WriteRune('"')
-				}
-				if dr.XAssetList != "" {
-					p.buf.WriteString(",X-ASSET-LIST=\"")
-					p.buf.WriteString(dr.XAssetList)
-					p.buf.WriteRune('"')
-				}
-				for k, v := range dr.X {
-					p.buf.WriteString(",")
-					p.buf.WriteString(k)
-					p.buf.WriteString("=\"")
-					p.buf.WriteString(v)
-					p.buf.WriteRune('"')
-				}
-				p.buf.WriteString("\n")
-			}
-		}
 		if seg.Discontinuity {
 			p.buf.WriteString("#EXT-X-DISCONTINUITY\n")
 		}
 		if seg.Gap {
 			p.buf.WriteString("#EXT-X-GAP\n")
+		}
+		if len(seg.DateRange) > 0 {
+			for _, dr := range seg.DateRange {
+				writeDaterange(&p.buf, dr)
+			}
 		}
 		// ignore segment Map if default playlist Map is present
 		if p.Map == nil && seg.Map != nil {
@@ -962,7 +883,114 @@ func (p *MediaPlaylist) Encode() *bytes.Buffer {
 	if p.Closed {
 		p.buf.WriteString("#EXT-X-ENDLIST\n")
 	}
+	if len(p.DateRange) > 0 {
+		for _, dr := range p.DateRange {
+			writeDaterange(&p.buf, dr)
+		}
+	}
 	return &p.buf
+}
+
+func writeDaterange(buf *bytes.Buffer, dr *DateRange) {
+	buf.WriteString("#EXT-X-DATERANGE:")
+	buf.WriteString("ID=\"")
+	buf.WriteString(dr.ID)
+	buf.WriteRune('"')
+	if dr.Class != "" {
+		buf.WriteString(",CLASS=\"")
+		buf.WriteString(dr.Class)
+		buf.WriteRune('"')
+	}
+	if !dr.StartDate.IsZero() {
+		buf.WriteString(",START-DATE=\"")
+		buf.WriteString(dr.StartDate.Format(DATETIME))
+		buf.WriteRune('"')
+	}
+	if !dr.EndDate.IsZero() {
+		buf.WriteString(",END-DATE=\"")
+		buf.WriteString(dr.EndDate.Format(DATETIME))
+		buf.WriteRune('"')
+	}
+	if dr.Duration > 0 {
+		buf.WriteString(",DURATION=")
+		buf.WriteString(strconv.FormatFloat(dr.Duration, 'f', -1, 64))
+	}
+	if dr.PlannedDuration > 0 {
+		buf.WriteString(",PLANNED-DURATION=")
+		buf.WriteString(strconv.FormatFloat(dr.PlannedDuration, 'f', -1, 64))
+	}
+	if dr.SCTE35Cmd != "" {
+		buf.WriteString(",SCTE35-CMD=")
+		buf.WriteString(dr.SCTE35Cmd)
+	}
+	if dr.SCTE35In != "" {
+		buf.WriteString(",SCTE35-IN=")
+		buf.WriteString(dr.SCTE35In)
+	}
+	if dr.SCTE35Out != "" {
+		buf.WriteString(",SCTE35-OUT=")
+		buf.WriteString(dr.SCTE35Out)
+	}
+	if dr.EndOnNext != "" {
+		buf.WriteString(",END-ON-NEXT=\"")
+		buf.WriteString(dr.EndOnNext)
+		buf.WriteRune('"')
+	}
+	// X-RESUME-OFFSET=0 is very commonly used,
+	// it indicates ads must be inserted without
+	// replacing any underlying content.
+	// Use a negative value to omit it output.
+	if dr.XResumeOffset > -1 {
+		buf.WriteString(",X-RESUME-OFFSET=")
+		buf.WriteString(strconv.FormatFloat(dr.XResumeOffset, 'f', -1, 64))
+	}
+	if dr.XPlayoutLimit > 0 {
+		buf.WriteString(",X-PLAYOUT-LIMIT=")
+		buf.WriteString(strconv.FormatFloat(dr.XPlayoutLimit, 'f', -1, 64))
+	}
+	if dr.XSnap != "" {
+		buf.WriteString(",X-SNAP=\"")
+		buf.WriteString(dr.XSnap)
+		buf.WriteRune('"')
+	}
+	if dr.XRestrict != "" {
+		buf.WriteString(",X-RESTRICT=\"")
+		buf.WriteString(dr.XRestrict)
+		buf.WriteRune('"')
+	}
+	if dr.XContentMayVary != "" {
+		buf.WriteString(",X-CONTENT-MAY-VARY=\"")
+		buf.WriteString(dr.XRestrict)
+		buf.WriteRune('"')
+	}
+	if dr.XTimelineOccupies != "" {
+		buf.WriteString(",X-TIMELINE-OCCUPIES=\"")
+		buf.WriteString(dr.XRestrict)
+		buf.WriteRune('"')
+	}
+	if dr.XTimelineStyle != "" {
+		buf.WriteString(",X-TIMELINE-STYLE=\"")
+		buf.WriteString(dr.XRestrict)
+		buf.WriteRune('"')
+	}
+	if dr.XAssetURI != "" {
+		buf.WriteString(",X-ASSET-URI=\"")
+		buf.WriteString(dr.XAssetURI)
+		buf.WriteRune('"')
+	}
+	if dr.XAssetList != "" {
+		buf.WriteString(",X-ASSET-LIST=\"")
+		buf.WriteString(dr.XAssetList)
+		buf.WriteRune('"')
+	}
+	for k, v := range dr.X {
+		buf.WriteString(",")
+		buf.WriteString(k)
+		buf.WriteString("=\"")
+		buf.WriteString(v)
+		buf.WriteRune('"')
+	}
+	buf.WriteString("\n")
 }
 
 // String here for compatibility with Stringer interface For example
