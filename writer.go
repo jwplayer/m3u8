@@ -779,6 +779,12 @@ func (p *MediaPlaylist) Encode() *bytes.Buffer {
 				case SCTE35Cue_End:
 					p.buf.WriteString("#EXT-X-CUE-IN")
 					p.buf.WriteRune('\n')
+				case SCTE35Cue_Start_End:
+					p.buf.WriteString("#EXT-X-CUE-OUT:")
+					p.buf.WriteString(strconv.FormatFloat(seg.SCTE.Time, 'f', -1, 64))
+					p.buf.WriteRune('\n')
+					p.buf.WriteString("#EXT-X-CUE-IN")
+					p.buf.WriteRune('\n')
 				}
 			}
 		}
@@ -1106,6 +1112,15 @@ func (p *MediaPlaylist) SetSCTE35(scte35 *SCTE) error {
 		return errors.New("playlist is empty")
 	}
 	p.Segments[p.last()].SCTE = scte35
+	return nil
+}
+
+func (p *MediaPlaylist) SetSCTE35OutIn(scte35 *SCTE) error {
+	segment := &MediaSegment{}
+	segment.SCTE = scte35
+	segment.SCTE.CueType = SCTE35Cue_Start_End
+	p.AppendSegment(segment)
+
 	return nil
 }
 

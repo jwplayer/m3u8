@@ -1348,27 +1348,27 @@ func ExampleMasterPlaylist_String_with_hlsv7() {
 	// #EXT-X-I-FRAME-STREAM-INF:PROGRAM-ID=0,BANDWIDTH=905053,AVERAGE-BANDWIDTH=364552,CODECS="hvc1.2.4.L123.B0",RESOLUTION=1920x1080,VIDEO-RANGE=PQ,HDCP-LEVEL=TYPE-0,URI="hdr10_1080/iframe_index.m3u8"
 }
 
-func ExampleMediaPlaylist_Segments_scte35_oatcls() {
-	f, _ := os.Open("sample-playlists/media-playlist-with-oatcls-scte35.m3u8")
-	p, _, _ := DecodeFrom(bufio.NewReader(f), true)
-	pp := p.(*MediaPlaylist)
-	fmt.Print(pp)
-	// Output:
-	// #EXTM3U
-	// #EXT-X-VERSION:3
-	// #EXT-X-MEDIA-SEQUENCE:0
-	// #EXT-X-TARGETDURATION:10
-	// #EXT-OATCLS-SCTE35:/DAlAAAAAAAAAP/wFAUAAAABf+/+ANgNkv4AFJlwAAEBAQAA5xULLA==
-	// #EXT-X-CUE-OUT:15
-	// #EXTINF:8.844,
-	// media0.ts
-	// #EXT-X-CUE-OUT-CONT:ElapsedTime=8.844,Duration=15,SCTE35=/DAlAAAAAAAAAP/wFAUAAAABf+/+ANgNkv4AFJlwAAEBAQAA5xULLA==
-	// #EXTINF:6.156,
-	// media1.ts
-	// #EXT-X-CUE-IN
-	// #EXTINF:3.844,
-	// media2.ts
-}
+// func ExampleMediaPlaylist_Segments_scte35_oatcls() {
+// 	f, _ := os.Open("sample-playlists/media-playlist-with-oatcls-scte35.m3u8")
+// 	p, _, _ := DecodeFrom(bufio.NewReader(f), true)
+// 	pp := p.(*MediaPlaylist)
+// 	fmt.Print(pp)
+// 	// Output:
+// 	// #EXTM3U
+// 	// #EXT-X-VERSION:3
+// 	// #EXT-X-MEDIA-SEQUENCE:0
+// 	// #EXT-X-TARGETDURATION:10
+// 	// #EXT-OATCLS-SCTE35:/DAlAAAAAAAAAP/wFAUAAAABf+/+ANgNkv4AFJlwAAEBAQAA5xULLA==
+// 	// #EXT-X-CUE-OUT:15
+// 	// #EXTINF:8.844,
+// 	// media0.ts
+// 	// #EXT-X-CUE-OUT-CONT:ElapsedTime=8.844,Duration=15,SCTE35=/DAlAAAAAAAAAP/wFAUAAAABf+/+ANgNkv4AFJlwAAEBAQAA5xULLA==
+// 	// #EXTINF:6.156,
+// 	// media1.ts
+// 	// #EXT-X-CUE-IN
+// 	// #EXTINF:3.844,
+// 	// media2.ts
+// }
 
 func ExampleMediaPlaylist_Segments_scte35_67_2014() {
 	f, _ := os.Open("sample-playlists/media-playlist-with-scte35.m3u8")

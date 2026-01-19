@@ -561,6 +561,9 @@ func decodeLineOfMediaPlaylist(p *MediaPlaylist, wv *WV, state *decodingState, l
 			}
 			state.tagRange = false
 		}
+		if state.tageSCTE35Out {
+			state.tageSCTE35Out = false
+		}
 		if state.tagSCTE35 {
 			state.tagSCTE35 = false
 			if err = p.SetSCTE35(state.scte); strict && err != nil {
@@ -816,10 +819,19 @@ func decodeLineOfMediaPlaylist(p *MediaPlaylist, wv *WV, state *decodingState, l
 		state.scte = new(SCTE)
 		state.scte.Syntax = SCTE35_OATCLS
 		state.scte.Cue = line[19:]
+	case state.tageSCTE35Out:
+		state.tageSCTE35Out = false
+		state.tagSCTE35 = false
+		if line == "#EXT-X-CUE-IN" {
+			if err = p.SetSCTE35OutIn(state.scte); strict && err != nil {
+				return err
+			}
+		}
 	case state.tagSCTE35 && state.scte.Syntax == SCTE35_OATCLS && strings.HasPrefix(line, "#EXT-X-CUE-OUT:"):
 		// EXT-OATCLS-SCTE35 contains the SCTE35 tag, EXT-X-CUE-OUT contains duration
 		state.scte.Time, _ = strconv.ParseFloat(line[15:], 64)
 		state.scte.CueType = SCTE35Cue_Start
+		state.tageSCTE35Out = true
 	case !state.tagSCTE35 && strings.HasPrefix(line, "#EXT-X-CUE-OUT-CONT:"):
 		state.tagSCTE35 = true
 		state.scte = new(SCTE)
@@ -842,6 +854,7 @@ func decodeLineOfMediaPlaylist(p *MediaPlaylist, wv *WV, state *decodingState, l
 		state.scte.CueType = SCTE35Cue_Start
 		lenLine := len(line)
 		if lenLine > 14 {
+			state.tageSCTE35Out = true
 			state.scte.Time, _ = strconv.ParseFloat(line[15:], 64)
 		}
 	case !state.tagSCTE35 && line == "#EXT-X-CUE-IN":
