@@ -1330,10 +1330,10 @@ func TestDecodeMediaPlaylistWithCueOutCueInAsSCTE(t *testing.T) {
 	if pp.Segments[0].SCTE.Time != 9.2 {
 		t.Errorf("Segment 0 must result in SCTE35Cue_Start_End")
 	}
-	if pp.Segments[6].SCTE.CueType != SCTE35Cue_Start_End {
+	if pp.Segments[5].SCTE.CueType != SCTE35Cue_Start_End {
 		t.Errorf("Segment 6 must result in SCTE35Cue_Start_End")
 	}
-	if pp.Segments[6].SCTE.Time != 20.5 {
+	if pp.Segments[5].SCTE.Time != 20.5 {
 		t.Errorf("Segment 6 must be 20.5")
 	}
 }

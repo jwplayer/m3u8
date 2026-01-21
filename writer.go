@@ -1120,10 +1120,8 @@ func (p *MediaPlaylist) SetSCTE35(scte35 *SCTE) error {
 // corresponds to the duration of the SCTE marker. CueType is set to SCTE35Cue_Start_End
 // and the segment is appended to
 func (p *MediaPlaylist) SetSCTE35OutIn(scte35 *SCTE) error {
-	segment := &MediaSegment{}
-	segment.SCTE = scte35
-	segment.SCTE.CueType = SCTE35Cue_Start_End
-	p.AppendSegment(segment)
+	scte35.CueType = SCTE35Cue_Start_End
+	p.Segments[p.last()].SCTE = scte35
 
 	return nil
 }
