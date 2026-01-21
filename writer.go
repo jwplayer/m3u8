@@ -1115,6 +1115,10 @@ func (p *MediaPlaylist) SetSCTE35(scte35 *SCTE) error {
 	return nil
 }
 
+// SetSCTE35OutIn sets a SCTE cue of cue type SCTE35Cue_Start_End. The SCTE object from
+// the previous line needs to be passed in as it will contain the Time field which
+// corresponds to the duration of the SCTE marker. CueType is set to SCTE35Cue_Start_End
+// and the segment is appended to
 func (p *MediaPlaylist) SetSCTE35OutIn(scte35 *SCTE) error {
 	segment := &MediaSegment{}
 	segment.SCTE = scte35
