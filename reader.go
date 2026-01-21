@@ -561,12 +561,6 @@ func decodeLineOfMediaPlaylist(p *MediaPlaylist, wv *WV, state *decodingState, l
 			}
 			state.tagRange = false
 		}
-		if state.tagSCTE35OutIn {
-			state.tagSCTE35OutIn = false
-			if err = p.SetSCTE35OutIn(state.scte); strict && err != nil {
-				return err
-			}
-		}
 		if state.tagSCTE35 {
 			state.tagSCTE35 = false
 			if err = p.SetSCTE35(state.scte); strict && err != nil {
@@ -855,15 +849,10 @@ func decodeLineOfMediaPlaylist(p *MediaPlaylist, wv *WV, state *decodingState, l
 			state.scte.Time, _ = strconv.ParseFloat(line[15:], 64)
 		}
 	case state.tagSCTE35 && line == "#EXT-X-CUE-IN":
-		// if tagSCTE35 is set then the previous line was of the form #EXT-X-CUE-OUT:<duration>, and
-		// the cue type is SCTE35Cue_Start_End. The cue is added to the next segment by setting
-		// tagSCTE35OutIn to true then adding the SCTE object once it's created after the next line
-		// which should be of the form #EXTINF:<seconds>
-		state.tagSCTE35 = false
-		state.tagSCTE35OutIn = true
-		scte := state.scte
-		scte.CueType = SCTE35Cue_Start_End
-	case !state.tagSCTE35OutIn && !state.tagSCTE35 && line == "#EXT-X-CUE-IN":
+		// if tagSCTE35 is set, then the previous line was of the form #EXT-X-CUE-OUT:<duration>, so
+		// the cuetype is set here to SCTE35Cue_Start_End.
+		state.scte.CueType = SCTE35Cue_Start_End
+	case !state.tagSCTE35 && line == "#EXT-X-CUE-IN":
 		state.tagSCTE35 = true
 		state.scte = new(SCTE)
 		state.scte.Syntax = SCTE35_OATCLS

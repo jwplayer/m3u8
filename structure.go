@@ -363,7 +363,6 @@ type decodingState struct {
 	tagStreamInf       bool
 	tagInf             bool
 	tagSCTE35          bool
-	tagSCTE35OutIn     bool
 	tagRange           bool
 	tagDiscontinuity   bool
 	tagGap             bool
