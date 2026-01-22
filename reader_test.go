@@ -1308,6 +1308,36 @@ func TestDecodeMediaPlaylistWithCueOutCueIn(t *testing.T) {
 	}
 }
 
+func TestDecodeMediaPlaylistWithCueOutCueInAsSCTE(t *testing.T) {
+	f, err := os.Open("sample-playlists/media-playlist-with-cue-out-in-as-scte.m3u8")
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, listType, err := DecodeFrom(bufio.NewReader(f), true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pp := p.(*MediaPlaylist)
+	fmt.Println(pp)
+	CheckType(t, pp)
+	if listType != MEDIA {
+		t.Error("Sample not recognized as media playlist.")
+	}
+
+	if pp.Segments[0].SCTE.CueType != SCTE35Cue_Start_End {
+		t.Errorf("Segment 0 must result in SCTE35Cue_Start_End")
+	}
+	if pp.Segments[0].SCTE.Time != 9.2 {
+		t.Errorf("Segment 0 must result in SCTE35Cue_Start_End")
+	}
+	if pp.Segments[5].SCTE.CueType != SCTE35Cue_Start_End {
+		t.Errorf("Segment 6 must result in SCTE35Cue_Start_End")
+	}
+	if pp.Segments[5].SCTE.Time != 20.5 {
+		t.Errorf("Segment 6 must be 20.5")
+	}
+}
+
 /****************
  *  Benchmarks  *
  ****************/

@@ -73,9 +73,10 @@ const (
 type SCTE35CueType uint
 
 const (
-	SCTE35Cue_Start SCTE35CueType = iota // SCTE35Cue_Start indicates an out cue point
-	SCTE35Cue_Mid                        // SCTE35Cue_Mid indicates a segment between start and end cue points
-	SCTE35Cue_End                        // SCTE35Cue_End indicates an in cue point
+	SCTE35Cue_Start     SCTE35CueType = iota // SCTE35Cue_Start indicates an out cue point
+	SCTE35Cue_Mid                            // SCTE35Cue_Mid indicates a segment between start and end cue points
+	SCTE35Cue_End                            // SCTE35Cue_End indicates an in cue point
+	SCTE35Cue_Start_End                      // SCTE35Cue_Start_End indicates an out immediately followed by an in cue point
 )
 
 // MediaPlaylist structure represents a single bitrate playlist aka

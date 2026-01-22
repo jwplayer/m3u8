@@ -779,6 +779,12 @@ func (p *MediaPlaylist) Encode() *bytes.Buffer {
 				case SCTE35Cue_End:
 					p.buf.WriteString("#EXT-X-CUE-IN")
 					p.buf.WriteRune('\n')
+				case SCTE35Cue_Start_End:
+					p.buf.WriteString("#EXT-X-CUE-OUT:")
+					p.buf.WriteString(strconv.FormatFloat(seg.SCTE.Time, 'f', -1, 64))
+					p.buf.WriteRune('\n')
+					p.buf.WriteString("#EXT-X-CUE-IN")
+					p.buf.WriteRune('\n')
 				}
 			}
 		}
@@ -1106,6 +1112,17 @@ func (p *MediaPlaylist) SetSCTE35(scte35 *SCTE) error {
 		return errors.New("playlist is empty")
 	}
 	p.Segments[p.last()].SCTE = scte35
+	return nil
+}
+
+// SetSCTE35OutIn sets a SCTE cue of cue type SCTE35Cue_Start_End. The SCTE object from
+// the previous line needs to be passed in as it will contain the Time field which
+// corresponds to the duration of the SCTE marker. CueType is set to SCTE35Cue_Start_End
+// and the segment is appended to
+func (p *MediaPlaylist) SetSCTE35OutIn(scte35 *SCTE) error {
+	scte35.CueType = SCTE35Cue_Start_End
+	p.Segments[p.last()].SCTE = scte35
+
 	return nil
 }
 

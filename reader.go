@@ -836,6 +836,10 @@ func decodeLineOfMediaPlaylist(p *MediaPlaylist, wv *WV, state *decodingState, l
 			}
 		}
 	case !state.tagSCTE35 && strings.HasPrefix(line, "#EXT-X-CUE-OUT"):
+		// if tagSCTE35 is not set then the previous line is not of the form #EXT-SCTE35: or
+		// #EXT-OATCLS-SCTE35:, so it could inidicate a cue-out by itself. However if the line
+		// is longer than 14 chars then the line is of the form #EXT-X-CUE-OUT:<duration>. This could
+		// indicate a cue type of SCTE35Cue_Start_End, this will only be the case if the next line is #EXT-X-CUE-IN.
 		state.tagSCTE35 = true
 		state.scte = new(SCTE)
 		state.scte.Syntax = SCTE35_OATCLS
@@ -844,6 +848,10 @@ func decodeLineOfMediaPlaylist(p *MediaPlaylist, wv *WV, state *decodingState, l
 		if lenLine > 14 {
 			state.scte.Time, _ = strconv.ParseFloat(line[15:], 64)
 		}
+	case state.tagSCTE35 && line == "#EXT-X-CUE-IN":
+		// if tagSCTE35 is set, then the previous line was of the form #EXT-X-CUE-OUT:<duration>, so
+		// the cuetype is set here to SCTE35Cue_Start_End.
+		state.scte.CueType = SCTE35Cue_Start_End
 	case !state.tagSCTE35 && line == "#EXT-X-CUE-IN":
 		state.tagSCTE35 = true
 		state.scte = new(SCTE)
