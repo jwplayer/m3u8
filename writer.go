@@ -223,103 +223,10 @@ func (p *MasterPlaylist) Encode() *bytes.Buffer {
 			}
 		}
 		if pl.Iframe {
-			p.buf.WriteString("#EXT-X-I-FRAME-STREAM-INF:PROGRAM-ID=")
-			p.buf.WriteString(strconv.FormatUint(uint64(pl.ProgramId), 10))
-			p.buf.WriteString(",BANDWIDTH=")
-			p.buf.WriteString(strconv.FormatUint(uint64(pl.Bandwidth), 10))
-			if pl.AverageBandwidth != 0 {
-				p.buf.WriteString(",AVERAGE-BANDWIDTH=")
-				p.buf.WriteString(strconv.FormatUint(uint64(pl.AverageBandwidth), 10))
-			}
-			if pl.Codecs != "" {
-				p.buf.WriteString(",CODECS=\"")
-				p.buf.WriteString(pl.Codecs)
-				p.buf.WriteRune('"')
-			}
-			if pl.Resolution != "" {
-				p.buf.WriteString(",RESOLUTION=") // Resolution should not be quoted
-				p.buf.WriteString(pl.Resolution)
-			}
-			if pl.Video != "" {
-				p.buf.WriteString(",VIDEO=\"")
-				p.buf.WriteString(pl.Video)
-				p.buf.WriteRune('"')
-			}
-			if pl.VideoRange != "" {
-				p.buf.WriteString(",VIDEO-RANGE=")
-				p.buf.WriteString(pl.VideoRange)
-			}
-			if pl.HDCPLevel != "" {
-				p.buf.WriteString(",HDCP-LEVEL=")
-				p.buf.WriteString(pl.HDCPLevel)
-			}
-			if pl.URI != "" {
-				p.buf.WriteString(",URI=\"")
-				p.buf.WriteString(pl.URI)
-				p.buf.WriteRune('"')
-			}
+			encodeIFrameVariantTag(&p.buf, pl)
 			p.buf.WriteRune('\n')
 		} else {
-			p.buf.WriteString("#EXT-X-STREAM-INF:PROGRAM-ID=")
-			p.buf.WriteString(strconv.FormatUint(uint64(pl.ProgramId), 10))
-			p.buf.WriteString(",BANDWIDTH=")
-			p.buf.WriteString(strconv.FormatUint(uint64(pl.Bandwidth), 10))
-			if pl.AverageBandwidth != 0 {
-				p.buf.WriteString(",AVERAGE-BANDWIDTH=")
-				p.buf.WriteString(strconv.FormatUint(uint64(pl.AverageBandwidth), 10))
-			}
-			if pl.Codecs != "" {
-				p.buf.WriteString(",CODECS=\"")
-				p.buf.WriteString(pl.Codecs)
-				p.buf.WriteRune('"')
-			}
-			if pl.Resolution != "" {
-				p.buf.WriteString(",RESOLUTION=") // Resolution should not be quoted
-				p.buf.WriteString(pl.Resolution)
-			}
-			if pl.Audio != "" {
-				p.buf.WriteString(",AUDIO=\"")
-				p.buf.WriteString(pl.Audio)
-				p.buf.WriteRune('"')
-			}
-			if pl.Video != "" {
-				p.buf.WriteString(",VIDEO=\"")
-				p.buf.WriteString(pl.Video)
-				p.buf.WriteRune('"')
-			}
-			if pl.Captions != "" {
-				p.buf.WriteString(",CLOSED-CAPTIONS=")
-				if pl.Captions == "NONE" {
-					p.buf.WriteString(pl.Captions) // CC should not be quoted when eq NONE
-				} else {
-					p.buf.WriteRune('"')
-					p.buf.WriteString(pl.Captions)
-					p.buf.WriteRune('"')
-				}
-			}
-			if pl.Subtitles != "" {
-				p.buf.WriteString(",SUBTITLES=\"")
-				p.buf.WriteString(pl.Subtitles)
-				p.buf.WriteRune('"')
-			}
-			if pl.Name != "" {
-				p.buf.WriteString(",NAME=\"")
-				p.buf.WriteString(pl.Name)
-				p.buf.WriteRune('"')
-			}
-			if pl.FrameRate != 0 {
-				p.buf.WriteString(",FRAME-RATE=")
-				p.buf.WriteString(strconv.FormatFloat(pl.FrameRate, 'f', 3, 64))
-			}
-			if pl.VideoRange != "" {
-				p.buf.WriteString(",VIDEO-RANGE=")
-				p.buf.WriteString(pl.VideoRange)
-			}
-			if pl.HDCPLevel != "" {
-				p.buf.WriteString(",HDCP-LEVEL=")
-				p.buf.WriteString(pl.HDCPLevel)
-			}
-
+			encodeVariantTag(&p.buf, pl)
 			p.buf.WriteRune('\n')
 			p.buf.WriteString(pl.URI)
 			if p.Args != "" {
@@ -335,6 +242,107 @@ func (p *MasterPlaylist) Encode() *bytes.Buffer {
 	}
 
 	return &p.buf
+}
+
+// EncodeVariant encodes a variant to M3U8 format.
+func encodeIFrameVariantTag(buf *bytes.Buffer, v *Variant) {
+	buf.WriteString("#EXT-X-I-FRAME-STREAM-INF:PROGRAM-ID=")
+	buf.WriteString(strconv.FormatUint(uint64(v.ProgramId), 10))
+	buf.WriteString(",BANDWIDTH=")
+	buf.WriteString(strconv.FormatUint(uint64(v.Bandwidth), 10))
+	if v.AverageBandwidth != 0 {
+		buf.WriteString(",AVERAGE-BANDWIDTH=")
+		buf.WriteString(strconv.FormatUint(uint64(v.AverageBandwidth), 10))
+	}
+	if v.Codecs != "" {
+		buf.WriteString(",CODECS=\"")
+		buf.WriteString(v.Codecs)
+		buf.WriteRune('"')
+	}
+	if v.Resolution != "" {
+		buf.WriteString(",RESOLUTION=") // Resolution should not be quoted
+		buf.WriteString(v.Resolution)
+	}
+	if v.Video != "" {
+		buf.WriteString(",VIDEO=\"")
+		buf.WriteString(v.Video)
+		buf.WriteRune('"')
+	}
+	if v.VideoRange != "" {
+		buf.WriteString(",VIDEO-RANGE=")
+		buf.WriteString(v.VideoRange)
+	}
+	if v.HDCPLevel != "" {
+		buf.WriteString(",HDCP-LEVEL=")
+		buf.WriteString(v.HDCPLevel)
+	}
+	if v.URI != "" {
+		buf.WriteString(",URI=\"")
+		buf.WriteString(v.URI)
+		buf.WriteRune('"')
+	}
+}
+
+func encodeVariantTag(buf *bytes.Buffer, v *Variant) {
+	buf.WriteString("#EXT-X-STREAM-INF:PROGRAM-ID=")
+	buf.WriteString(strconv.FormatUint(uint64(v.ProgramId), 10))
+	buf.WriteString(",BANDWIDTH=")
+	buf.WriteString(strconv.FormatUint(uint64(v.Bandwidth), 10))
+	if v.AverageBandwidth != 0 {
+		buf.WriteString(",AVERAGE-BANDWIDTH=")
+		buf.WriteString(strconv.FormatUint(uint64(v.AverageBandwidth), 10))
+	}
+	if v.Codecs != "" {
+		buf.WriteString(",CODECS=\"")
+		buf.WriteString(v.Codecs)
+		buf.WriteRune('"')
+	}
+	if v.Resolution != "" {
+		buf.WriteString(",RESOLUTION=") // Resolution should not be quoted
+		buf.WriteString(v.Resolution)
+	}
+	if v.Audio != "" {
+		buf.WriteString(",AUDIO=\"")
+		buf.WriteString(v.Audio)
+		buf.WriteRune('"')
+	}
+	if v.Video != "" {
+		buf.WriteString(",VIDEO=\"")
+		buf.WriteString(v.Video)
+		buf.WriteRune('"')
+	}
+	if v.Captions != "" {
+		buf.WriteString(",CLOSED-CAPTIONS=")
+		if v.Captions == "NONE" {
+			buf.WriteString(v.Captions) // CC should not be quoted when eq NONE
+		} else {
+			buf.WriteRune('"')
+			buf.WriteString(v.Captions)
+			buf.WriteRune('"')
+		}
+	}
+	if v.Subtitles != "" {
+		buf.WriteString(",SUBTITLES=\"")
+		buf.WriteString(v.Subtitles)
+		buf.WriteRune('"')
+	}
+	if v.Name != "" {
+		buf.WriteString(",NAME=\"")
+		buf.WriteString(v.Name)
+		buf.WriteRune('"')
+	}
+	if v.FrameRate != 0 {
+		buf.WriteString(",FRAME-RATE=")
+		buf.WriteString(strconv.FormatFloat(v.FrameRate, 'f', 3, 64))
+	}
+	if v.VideoRange != "" {
+		buf.WriteString(",VIDEO-RANGE=")
+		buf.WriteString(v.VideoRange)
+	}
+	if v.HDCPLevel != "" {
+		buf.WriteString(",HDCP-LEVEL=")
+		buf.WriteString(v.HDCPLevel)
+	}
 }
 
 // SetCustomTag sets the provided tag on the master playlist for its TagName
