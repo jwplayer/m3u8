@@ -223,10 +223,10 @@ func (p *MasterPlaylist) Encode() *bytes.Buffer {
 			}
 		}
 		if pl.Iframe {
-			encodeIFrameVariantTag(&p.buf, pl)
+			EncodeIFrameVariantTag(&p.buf, pl)
 			p.buf.WriteRune('\n')
 		} else {
-			encodeVariantTag(&p.buf, pl)
+			EncodeVariantTag(&p.buf, pl)
 			p.buf.WriteRune('\n')
 			p.buf.WriteString(pl.URI)
 			if p.Args != "" {
@@ -245,7 +245,7 @@ func (p *MasterPlaylist) Encode() *bytes.Buffer {
 }
 
 // EncodeVariant encodes a variant to M3U8 format.
-func encodeIFrameVariantTag(buf *bytes.Buffer, v *Variant) {
+func EncodeIFrameVariantTag(buf *bytes.Buffer, v *Variant) {
 	buf.WriteString("#EXT-X-I-FRAME-STREAM-INF:PROGRAM-ID=")
 	buf.WriteString(strconv.FormatUint(uint64(v.ProgramId), 10))
 	buf.WriteString(",BANDWIDTH=")
@@ -283,7 +283,7 @@ func encodeIFrameVariantTag(buf *bytes.Buffer, v *Variant) {
 	}
 }
 
-func encodeVariantTag(buf *bytes.Buffer, v *Variant) {
+func EncodeVariantTag(buf *bytes.Buffer, v *Variant) {
 	buf.WriteString("#EXT-X-STREAM-INF:PROGRAM-ID=")
 	buf.WriteString(strconv.FormatUint(uint64(v.ProgramId), 10))
 	buf.WriteString(",BANDWIDTH=")
