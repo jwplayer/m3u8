@@ -219,6 +219,11 @@ type Alternative struct {
 	Subtitles       string
 	InstreamId      string
 	Channels        string
+	// Chunklist is the media playlist at URI, for callers that fetch it. Never decoded or
+	// encoded, mirroring Variant.Chunklist: an EXT-X-MEDIA track has no other place to keep one.
+	// Population is per-pointer, so a playlist that repeats the same alternative across variants
+	// as distinct pointers needs each one set.
+	Chunklist *MediaPlaylist
 }
 
 // MediaSegment structure represents a media segment included in a

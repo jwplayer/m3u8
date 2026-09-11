@@ -153,7 +153,10 @@ func (p *MasterPlaylist) Encode() *bytes.Buffer {
 	for _, pl := range p.Variants {
 		if pl.Alternatives != nil {
 			for _, alt := range pl.Alternatives {
-				// Make sure that we only write out an alternative once
+				// Make sure that we only write out an alternative once.
+				// The key omits URI, so two alternatives in one group differing only by URI
+				// collapse into a single EXT-X-MEDIA line. Renditions must differ by at least
+				// one of type, group, name or language to survive encoding.
 				altKey := fmt.Sprintf("%s-%s-%s-%s", alt.Type, alt.GroupId, alt.Name, alt.Language)
 				if altsWritten[altKey] {
 					continue

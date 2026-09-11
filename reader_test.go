@@ -12,6 +12,7 @@ package m3u8
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -241,6 +242,59 @@ func TestDecodeMasterPlaylistWithAlternatives(t *testing.T) {
 		}
 	}
 	// fmt.Println(p.Encode().String())
+}
+
+func TestDecodeMasterPlaylistAlternativeChunklistIsNil(t *testing.T) {
+	f, err := os.Open("sample-playlists/master-with-alternatives.m3u8")
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := NewMasterPlaylist()
+	if err := p.DecodeFrom(bufio.NewReader(f), false); err != nil {
+		t.Fatal(err)
+	}
+	for i, v := range p.Variants {
+		for j, alt := range v.Alternatives {
+			if alt.Chunklist != nil {
+				t.Fatalf("variant %d alternative %d: decoder populated Chunklist, must stay nil", i, j)
+			}
+		}
+	}
+}
+
+func TestMasterPlaylistJSONRoundTripWithAlternativeChunklist(t *testing.T) {
+	f, err := os.Open("sample-playlists/master-with-alternatives.m3u8")
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := NewMasterPlaylist()
+	if err := p.DecodeFrom(bufio.NewReader(f), false); err != nil {
+		t.Fatal(err)
+	}
+	chunklist, err := NewMediaPlaylist(3, 3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := chunklist.Append("low/main/1.ts", 10.0, ""); err != nil {
+		t.Fatal(err)
+	}
+	p.Variants[0].Alternatives[0].Chunklist = chunklist
+
+	blob, err := json.Marshal(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var decoded MasterPlaylist
+	if err := json.Unmarshal(blob, &decoded); err != nil {
+		t.Fatal(err)
+	}
+	got := decoded.Variants[0].Alternatives[0].Chunklist
+	if got == nil {
+		t.Fatal("alternative chunklist lost in JSON round trip")
+	}
+	if len(got.Segments) == 0 || got.Segments[0] == nil || got.Segments[0].URI != "low/main/1.ts" {
+		t.Fatalf("alternative chunklist segments did not survive JSON round trip: %+v", got.Segments)
+	}
 }
 
 func TestDecodeMasterPlaylistWithClosedCaptionEqNone(t *testing.T) {
