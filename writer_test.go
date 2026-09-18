@@ -801,6 +801,41 @@ func TestNewMasterPlaylistWithAlternatives(t *testing.T) {
 	}
 }
 
+// Alternative.Chunklist must never reach the serialized playlist.
+func TestEncodeMasterPlaylistIgnoresAlternativeChunklist(t *testing.T) {
+	f, err := os.Open("sample-playlists/master-with-alternatives.m3u8")
+	if err != nil {
+		t.Fatal(err)
+	}
+	m := NewMasterPlaylist()
+	if err := m.DecodeFrom(bufio.NewReader(f), false); err != nil {
+		t.Fatal(err)
+	}
+	before := m.Encode().String()
+
+	chunklist, err := NewMediaPlaylist(3, 3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := chunklist.Append("should-not-appear.ts", 10.0, ""); err != nil {
+		t.Fatal(err)
+	}
+	for _, v := range m.Variants {
+		for _, alt := range v.Alternatives {
+			alt.Chunklist = chunklist
+		}
+	}
+	m.ResetCache()
+	after := m.Encode().String()
+
+	if before != after {
+		t.Fatalf("setting Alternative.Chunklist changed the encoded playlist\nbefore:\n%s\nafter:\n%s", before, after)
+	}
+	if strings.Contains(after, "should-not-appear.ts") {
+		t.Fatalf("alternative chunklist leaked into encoded playlist:\n%s", after)
+	}
+}
+
 func TestNewMasterPlaylistWithSessionData(t *testing.T) {
 	m := NewMasterPlaylist()
 	m.SessionData = []*SessionData{
