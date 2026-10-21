@@ -1496,3 +1496,126 @@ func TestWriteMediaPlaylistWithoutIndependentSegments(t *testing.T) {
 		t.Error("Expected independentsegments to be false")
 	}
 }
+
+func TestDecodeMasterPlaylistWithImageStreamInf(t *testing.T) {
+	f, err := os.Open("sample-playlists/master-with-image-stream-inf.m3u8")
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := NewMasterPlaylist()
+	if err = p.DecodeFrom(bufio.NewReader(f), true); err != nil {
+		t.Fatal(err)
+	}
+	expected := []*Variant{
+		{URI: "jpeg/360p.m3u8", VariantParams: VariantParams{ProgramId: 1, Bandwidth: 115200, Codecs: "jpeg", Resolution: "640x360"}},
+		{URI: "jpeg/270p.m3u8", VariantParams: VariantParams{ProgramId: 1, Bandwidth: 64800, Codecs: "jpeg", Resolution: "480x270"}},
+	}
+	if !reflect.DeepEqual(p.ImageVariants, expected) {
+		t.Errorf("ImageVariants = %+v, want %+v", p.ImageVariants, expected)
+	}
+	if len(p.Variants) != 6 {
+		t.Errorf("len(Variants) = %d, want 6 (3 regular and 3 I-frame)", len(p.Variants))
+	}
+	for _, v := range p.Variants {
+		if v.Codecs == "jpeg" {
+			t.Errorf("image variant %s leaked into Variants", v.URI)
+		}
+	}
+}
+
+func TestDecodeMasterPlaylistImageStreamInfLeavesAlternatives(t *testing.T) {
+	const playlist = `#EXTM3U
+#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subs",NAME="Subs",URI="subs/eng.m3u8"
+#EXT-X-IMAGE-STREAM-INF:BANDWIDTH=115200,RESOLUTION=640x360,CODECS="jpeg",URI="jpeg/360p.m3u8"
+#EXT-X-STREAM-INF:BANDWIDTH=630000,SUBTITLES="subs"
+360p.m3u8
+`
+	p := NewMasterPlaylist()
+	if err := p.DecodeFrom(bytes.NewBufferString(playlist), true); err != nil {
+		t.Fatal(err)
+	}
+	if len(p.ImageVariants) != 1 || p.ImageVariants[0].Alternatives != nil {
+		t.Fatalf("ImageVariants = %+v, want one entry without alternatives", p.ImageVariants)
+	}
+	if len(p.Variants) != 1 || len(p.Variants[0].Alternatives) != 1 {
+		t.Fatalf("Variants = %+v, want one entry holding the subtitles alternative", p.Variants)
+	}
+}
+
+func TestDecodeMediaPlaylistImagesOnly(t *testing.T) {
+	f, err := os.Open("sample-playlists/media-playlist-images-only.m3u8")
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, listType, err := DecodeFrom(bufio.NewReader(f), true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if listType != MEDIA {
+		t.Fatal("Sample not recognized as media playlist.")
+	}
+	pp := p.(*MediaPlaylist)
+	if !pp.ImagesOnly {
+		t.Error("ImagesOnly = false, want true")
+	}
+	if pp.Count() != 3 {
+		t.Fatalf("Count() = %d, want 3", pp.Count())
+	}
+	for _, seg := range pp.Segments[:pp.Count()] {
+		if seg.Tiles != nil {
+			t.Errorf("segment %s has Tiles %+v, want nil", seg.URI, seg.Tiles)
+		}
+	}
+}
+
+func TestDecodeMediaPlaylistImagesOnlyTiled(t *testing.T) {
+	f, err := os.Open("sample-playlists/media-playlist-images-only-tiled.m3u8")
+	if err != nil {
+		t.Fatal(err)
+	}
+	pp, err := NewMediaPlaylist(0, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = pp.DecodeFrom(bufio.NewReader(f), true); err != nil {
+		t.Fatal(err)
+	}
+	if !pp.ImagesOnly {
+		t.Error("ImagesOnly = false, want true")
+	}
+	expected := []*Tiles{
+		{Resolution: "312x176", Layout: "5x5", Duration: 2.002},
+		{Resolution: "312x176", Layout: "5x3", Duration: 2.002},
+	}
+	for i, want := range expected {
+		if got := pp.Segments[i].Tiles; !reflect.DeepEqual(got, want) {
+			t.Errorf("segment %d Tiles = %+v, want %+v", i, got, want)
+		}
+	}
+}
+
+func TestDecodeMediaPlaylistTilesBeforeExtinf(t *testing.T) {
+	const playlist = `#EXTM3U
+#EXT-X-TARGETDURATION:10
+#EXT-X-IMAGES-ONLY
+#EXT-X-TILES:RESOLUTION=160x90,LAYOUT=2x2,DURATION=2.5
+#EXTINF:10.000,
+a.jpg
+#EXTINF:10.000,
+b.jpg
+`
+	pp, err := NewMediaPlaylist(0, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = pp.DecodeFrom(bytes.NewBufferString(playlist), true); err != nil {
+		t.Fatal(err)
+	}
+	want := &Tiles{Resolution: "160x90", Layout: "2x2", Duration: 2.5}
+	if !reflect.DeepEqual(pp.Segments[0].Tiles, want) {
+		t.Errorf("segment 0 Tiles = %+v, want %+v", pp.Segments[0].Tiles, want)
+	}
+	if pp.Segments[1].Tiles != nil {
+		t.Errorf("segment 1 Tiles = %+v, want nil", pp.Segments[1].Tiles)
+	}
+}
