@@ -244,38 +244,7 @@ func (p *MasterPlaylist) Encode() *bytes.Buffer {
 		}
 	}
 
-	for _, pl := range p.ImageVariants {
-		EncodeImageVariantTag(&p.buf, pl)
-		p.buf.WriteRune('\n')
-	}
-
 	return &p.buf
-}
-
-// EncodeImageVariantTag encodes an image variant as an EXT-X-IMAGE-STREAM-INF tag.
-func EncodeImageVariantTag(buf *bytes.Buffer, v *Variant) {
-	buf.WriteString("#EXT-X-IMAGE-STREAM-INF:PROGRAM-ID=")
-	buf.WriteString(strconv.FormatUint(uint64(v.ProgramId), 10))
-	buf.WriteString(",BANDWIDTH=")
-	buf.WriteString(strconv.FormatUint(uint64(v.Bandwidth), 10))
-	if v.AverageBandwidth != 0 {
-		buf.WriteString(",AVERAGE-BANDWIDTH=")
-		buf.WriteString(strconv.FormatUint(uint64(v.AverageBandwidth), 10))
-	}
-	if v.Resolution != "" {
-		buf.WriteString(",RESOLUTION=") // Resolution should not be quoted
-		buf.WriteString(v.Resolution)
-	}
-	if v.Codecs != "" {
-		buf.WriteString(",CODECS=\"")
-		buf.WriteString(v.Codecs)
-		buf.WriteRune('"')
-	}
-	if v.URI != "" {
-		buf.WriteString(",URI=\"")
-		buf.WriteString(v.URI)
-		buf.WriteRune('"')
-	}
 }
 
 // EncodeVariant encodes a variant to M3U8 format.
@@ -696,9 +665,6 @@ func (p *MediaPlaylist) Encode() *bytes.Buffer {
 	if p.Iframe {
 		p.buf.WriteString("#EXT-X-I-FRAMES-ONLY\n")
 	}
-	if p.ImagesOnly {
-		p.buf.WriteString("#EXT-X-IMAGES-ONLY\n")
-	}
 	// Widevine tags
 	if p.WV != nil {
 		if p.WV.AudioChannels != 0 {
@@ -923,16 +889,6 @@ func (p *MediaPlaylist) Encode() *bytes.Buffer {
 		p.buf.WriteRune(',')
 		p.buf.WriteString(seg.Title)
 		p.buf.WriteRune('\n')
-		// Apple's image playlist spec places EXT-X-TILES between EXTINF and the URI.
-		if seg.Tiles != nil {
-			p.buf.WriteString("#EXT-X-TILES:RESOLUTION=")
-			p.buf.WriteString(seg.Tiles.Resolution)
-			p.buf.WriteString(",LAYOUT=")
-			p.buf.WriteString(seg.Tiles.Layout)
-			p.buf.WriteString(",DURATION=")
-			p.buf.WriteString(strconv.FormatFloat(seg.Tiles.Duration, 'f', 3, 64))
-			p.buf.WriteRune('\n')
-		}
 		p.buf.WriteString(seg.URI)
 		if p.Args != "" {
 			p.buf.WriteRune('?')

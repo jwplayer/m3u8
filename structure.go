@@ -112,7 +112,6 @@ type MediaPlaylist struct {
 	Segments            []*MediaSegment
 	Args                string // optional arguments placed after URIs (URI?Args)
 	Iframe              bool   // EXT-X-I-FRAMES-ONLY
-	ImagesOnly          bool   // EXT-X-IMAGES-ONLY
 	Closed              bool   // is this VOD (closed) or Live (sliding) playlist?
 	MediaType           MediaType
 	DiscontinuitySeq    uint64 // EXT-X-DISCONTINUITY-SEQUENCE
@@ -151,7 +150,6 @@ type MediaPlaylist struct {
 //	http://example.com/audio-only.m3u8
 type MasterPlaylist struct {
 	Variants            []*Variant
-	ImageVariants       []*Variant // EXT-X-IMAGE-STREAM-INF, apart from Variants so video rendition picks never land on a JPEG track
 	SessionData         []*SessionData
 	Args                string // optional arguments placed after URI (URI?Args)
 	CypherVersion       string // non-standard tag for Widevine (see also WV struct)
@@ -245,16 +243,7 @@ type MediaSegment struct {
 	DateRange       []*DateRange // EXT-X-DATERANGE tags
 	SCTE            *SCTE        // SCTE-35 used for Ad signaling in HLS
 	ProgramDateTime time.Time    // EXT-X-PROGRAM-DATE-TIME tag associates the first sample of a media segment with an absolute date and/or time
-	Tiles           *Tiles       // EXT-X-TILES describes the thumbnail grid of an image segment
 	Custom          map[string]CustomTag
-}
-
-// Tiles structure represents the EXT-X-TILES tag of an image media playlist
-// (Apple/Roku HLS image playlist extension).
-type Tiles struct {
-	Resolution string  // size of a single tile, e.g. 320x180
-	Layout     string  // columns x rows of tiles in the image, e.g. 5x4
-	Duration   float64 // seconds covered by each tile
 }
 
 // SCTE holds custom, non EXT-X-DATERANGE, SCTE-35 tags
@@ -386,7 +375,6 @@ type decodingState struct {
 	tagKey             bool
 	tagMap             bool
 	tagCustom          bool
-	tagTiles           bool
 	programDateTime    time.Time
 	limit              int64
 	offset             int64
@@ -396,7 +384,6 @@ type decodingState struct {
 	alternatives       []*Alternative
 	xkey               *Key
 	xmap               *Map
-	tiles              *Tiles
 	scte               *SCTE
 	custom             map[string]CustomTag
 	daterange          []*DateRange
