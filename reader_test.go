@@ -1619,3 +1619,48 @@ b.jpg
 		t.Errorf("segment 1 Tiles = %+v, want nil", pp.Segments[1].Tiles)
 	}
 }
+
+func TestDecodeImagePlaylistInvalidNumbers(t *testing.T) {
+	masters := map[string]string{
+		"PROGRAM-ID":        `#EXT-X-IMAGE-STREAM-INF:PROGRAM-ID=x,BANDWIDTH=115200,URI="jpeg/360p.m3u8"`,
+		"BANDWIDTH":         `#EXT-X-IMAGE-STREAM-INF:BANDWIDTH=x,URI="jpeg/360p.m3u8"`,
+		"AVERAGE-BANDWIDTH": `#EXT-X-IMAGE-STREAM-INF:BANDWIDTH=115200,AVERAGE-BANDWIDTH=x,URI="jpeg/360p.m3u8"`,
+	}
+	for name, line := range masters {
+		t.Run(name, func(t *testing.T) {
+			playlist := "#EXTM3U\n" + line + "\n"
+			if err := NewMasterPlaylist().DecodeFrom(bytes.NewBufferString(playlist), true); err == nil {
+				t.Error("strict decode succeeded, want error")
+			}
+			p := NewMasterPlaylist()
+			if err := p.DecodeFrom(bytes.NewBufferString(playlist), false); err != nil {
+				t.Fatalf("non-strict decode failed: %s", err)
+			}
+			if len(p.ImageVariants) != 1 || p.ImageVariants[0].URI != "jpeg/360p.m3u8" {
+				t.Errorf("ImageVariants = %+v, want one entry with its URI", p.ImageVariants)
+			}
+		})
+	}
+
+	t.Run("TILES DURATION", func(t *testing.T) {
+		const playlist = `#EXTM3U
+#EXT-X-TARGETDURATION:10
+#EXT-X-IMAGES-ONLY
+#EXTINF:10.000,
+#EXT-X-TILES:RESOLUTION=160x90,LAYOUT=2x2,DURATION=x
+a.jpg
+`
+		strict, _ := NewMediaPlaylist(0, 1)
+		if err := strict.DecodeFrom(bytes.NewBufferString(playlist), true); err == nil {
+			t.Error("strict decode succeeded, want error")
+		}
+		p, _ := NewMediaPlaylist(0, 1)
+		if err := p.DecodeFrom(bytes.NewBufferString(playlist), false); err != nil {
+			t.Fatalf("non-strict decode failed: %s", err)
+		}
+		want := &Tiles{Resolution: "160x90", Layout: "2x2"}
+		if !reflect.DeepEqual(p.Segments[0].Tiles, want) {
+			t.Errorf("segment 0 Tiles = %+v, want %+v", p.Segments[0].Tiles, want)
+		}
+	})
+}

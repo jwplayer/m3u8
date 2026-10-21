@@ -1636,3 +1636,46 @@ tiles/2.jpg
 		t.Errorf("Encode() =\n%s\nwant\n%s", got, expected)
 	}
 }
+
+func TestEncodeImageVariantAverageBandwidthWithoutURI(t *testing.T) {
+	const playlist = `#EXTM3U
+#EXT-X-IMAGE-STREAM-INF:BANDWIDTH=115200,AVERAGE-BANDWIDTH=100000,RESOLUTION=640x360,CODECS="jpeg"
+`
+	p := NewMasterPlaylist()
+	if err := p.DecodeFrom(bytes.NewBufferString(playlist), true); err != nil {
+		t.Fatal(err)
+	}
+	want := []*Variant{{VariantParams: VariantParams{Bandwidth: 115200, AverageBandwidth: 100000, Codecs: "jpeg", Resolution: "640x360"}}}
+	if !reflect.DeepEqual(p.ImageVariants, want) {
+		t.Errorf("ImageVariants = %+v, want %+v", p.ImageVariants, want)
+	}
+	const tag = "#EXT-X-IMAGE-STREAM-INF:PROGRAM-ID=0,BANDWIDTH=115200,AVERAGE-BANDWIDTH=100000,RESOLUTION=640x360,CODECS=\"jpeg\"\n"
+	if got := p.Encode().String(); !strings.HasSuffix(got, tag) {
+		t.Errorf("Encode() =\n%s\nwant suffix\n%s", got, tag)
+	}
+}
+
+func TestEncodeMediaPlaylistPartialTiles(t *testing.T) {
+	p, err := NewMediaPlaylist(0, 3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, uri := range []string{"a.jpg", "b.jpg", "c.jpg"} {
+		if err = p.Append(uri, 10, ""); err != nil {
+			t.Fatal(err)
+		}
+	}
+	p.Segments[0].Tiles = &Tiles{Layout: "5x5"}
+	p.Segments[1].Tiles = &Tiles{Resolution: "312x176", Duration: 2.002}
+	p.Segments[2].Tiles = &Tiles{}
+	got := p.Encode().String()
+	for _, want := range []string{
+		"#EXTINF:10.000,\n#EXT-X-TILES:LAYOUT=5x5\na.jpg\n",
+		"#EXTINF:10.000,\n#EXT-X-TILES:RESOLUTION=312x176,DURATION=2.002\nb.jpg\n",
+		"#EXTINF:10.000,\nc.jpg\n",
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("Encode() =\n%s\nwant it to contain\n%s", got, want)
+		}
+	}
+}

@@ -278,6 +278,27 @@ func EncodeImageVariantTag(buf *bytes.Buffer, v *Variant) {
 	}
 }
 
+// encodeTilesTag encodes an EXT-X-TILES tag, skipping unset attributes.
+// A tag with no attributes is dropped rather than written as a bare "#EXT-X-TILES:".
+func encodeTilesTag(buf *bytes.Buffer, t *Tiles) {
+	var attrs []string
+	if t.Resolution != "" {
+		attrs = append(attrs, "RESOLUTION="+t.Resolution)
+	}
+	if t.Layout != "" {
+		attrs = append(attrs, "LAYOUT="+t.Layout)
+	}
+	if t.Duration != 0 {
+		attrs = append(attrs, "DURATION="+strconv.FormatFloat(t.Duration, 'f', 3, 64))
+	}
+	if len(attrs) == 0 {
+		return
+	}
+	buf.WriteString("#EXT-X-TILES:")
+	buf.WriteString(strings.Join(attrs, ","))
+	buf.WriteRune('\n')
+}
+
 // EncodeVariant encodes a variant to M3U8 format.
 func EncodeIFrameVariantTag(buf *bytes.Buffer, v *Variant) {
 	buf.WriteString("#EXT-X-I-FRAME-STREAM-INF:PROGRAM-ID=")
@@ -925,13 +946,7 @@ func (p *MediaPlaylist) Encode() *bytes.Buffer {
 		p.buf.WriteRune('\n')
 		// Apple's image playlist spec places EXT-X-TILES between EXTINF and the URI.
 		if seg.Tiles != nil {
-			p.buf.WriteString("#EXT-X-TILES:RESOLUTION=")
-			p.buf.WriteString(seg.Tiles.Resolution)
-			p.buf.WriteString(",LAYOUT=")
-			p.buf.WriteString(seg.Tiles.Layout)
-			p.buf.WriteString(",DURATION=")
-			p.buf.WriteString(strconv.FormatFloat(seg.Tiles.Duration, 'f', 3, 64))
-			p.buf.WriteRune('\n')
+			encodeTilesTag(&p.buf, seg.Tiles)
 		}
 		p.buf.WriteString(seg.URI)
 		if p.Args != "" {
