@@ -244,7 +244,59 @@ func (p *MasterPlaylist) Encode() *bytes.Buffer {
 		}
 	}
 
+	for _, pl := range p.ImageVariants {
+		EncodeImageVariantTag(&p.buf, pl)
+		p.buf.WriteRune('\n')
+	}
+
 	return &p.buf
+}
+
+// EncodeImageVariantTag encodes an image variant as an EXT-X-IMAGE-STREAM-INF tag.
+func EncodeImageVariantTag(buf *bytes.Buffer, v *Variant) {
+	buf.WriteString("#EXT-X-IMAGE-STREAM-INF:PROGRAM-ID=")
+	buf.WriteString(strconv.FormatUint(uint64(v.ProgramId), 10))
+	buf.WriteString(",BANDWIDTH=")
+	buf.WriteString(strconv.FormatUint(uint64(v.Bandwidth), 10))
+	if v.AverageBandwidth != 0 {
+		buf.WriteString(",AVERAGE-BANDWIDTH=")
+		buf.WriteString(strconv.FormatUint(uint64(v.AverageBandwidth), 10))
+	}
+	if v.Resolution != "" {
+		buf.WriteString(",RESOLUTION=") // Resolution should not be quoted
+		buf.WriteString(v.Resolution)
+	}
+	if v.Codecs != "" {
+		buf.WriteString(",CODECS=\"")
+		buf.WriteString(v.Codecs)
+		buf.WriteRune('"')
+	}
+	if v.URI != "" {
+		buf.WriteString(",URI=\"")
+		buf.WriteString(v.URI)
+		buf.WriteRune('"')
+	}
+}
+
+// encodeTilesTag encodes an EXT-X-TILES tag, skipping unset attributes.
+// A tag with no attributes is dropped rather than written as a bare "#EXT-X-TILES:".
+func encodeTilesTag(buf *bytes.Buffer, t *Tiles) {
+	var attrs []string
+	if t.Resolution != "" {
+		attrs = append(attrs, "RESOLUTION="+t.Resolution)
+	}
+	if t.Layout != "" {
+		attrs = append(attrs, "LAYOUT="+t.Layout)
+	}
+	if t.Duration != 0 {
+		attrs = append(attrs, "DURATION="+strconv.FormatFloat(t.Duration, 'f', 3, 64))
+	}
+	if len(attrs) == 0 {
+		return
+	}
+	buf.WriteString("#EXT-X-TILES:")
+	buf.WriteString(strings.Join(attrs, ","))
+	buf.WriteRune('\n')
 }
 
 // EncodeVariant encodes a variant to M3U8 format.
@@ -665,6 +717,9 @@ func (p *MediaPlaylist) Encode() *bytes.Buffer {
 	if p.Iframe {
 		p.buf.WriteString("#EXT-X-I-FRAMES-ONLY\n")
 	}
+	if p.ImagesOnly {
+		p.buf.WriteString("#EXT-X-IMAGES-ONLY\n")
+	}
 	// Widevine tags
 	if p.WV != nil {
 		if p.WV.AudioChannels != 0 {
@@ -889,6 +944,10 @@ func (p *MediaPlaylist) Encode() *bytes.Buffer {
 		p.buf.WriteRune(',')
 		p.buf.WriteString(seg.Title)
 		p.buf.WriteRune('\n')
+		// Apple's image playlist spec places EXT-X-TILES between EXTINF and the URI.
+		if seg.Tiles != nil {
+			encodeTilesTag(&p.buf, seg.Tiles)
+		}
 		p.buf.WriteString(seg.URI)
 		if p.Args != "" {
 			p.buf.WriteRune('?')

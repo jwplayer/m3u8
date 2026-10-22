@@ -486,6 +486,43 @@ func decodeLineOfMasterPlaylist(p *MasterPlaylist, state *decodingState, line st
 				state.variant.HDCPLevel = v
 			}
 		}
+	case strings.HasPrefix(line, "#EXT-X-IMAGE-STREAM-INF:"):
+		// Unlike the I-frame case, pending EXT-X-MEDIA lines stay in state for the next
+		// EXT-X-STREAM-INF: an image variant never references alternative renditions.
+		state.listType = MASTER
+		v := new(Variant)
+		p.ImageVariants = append(p.ImageVariants, v)
+		for k, val := range decodeParamsLine(line[24:]) {
+			switch k {
+			case "URI":
+				v.URI = val
+			case "PROGRAM-ID":
+				var n int
+				n, err = strconv.Atoi(val)
+				if strict && err != nil {
+					return err
+				}
+				v.ProgramId = uint32(n)
+			case "BANDWIDTH":
+				var n int
+				n, err = strconv.Atoi(val)
+				if strict && err != nil {
+					return err
+				}
+				v.Bandwidth = uint32(n)
+			case "AVERAGE-BANDWIDTH":
+				var n int
+				n, err = strconv.Atoi(val)
+				if strict && err != nil {
+					return err
+				}
+				v.AverageBandwidth = uint32(n)
+			case "CODECS":
+				v.Codecs = val
+			case "RESOLUTION":
+				v.Resolution = val
+			}
+		}
 	}
 	return err
 }
@@ -615,6 +652,10 @@ func decodeLineOfMediaPlaylist(p *MediaPlaylist, wv *WV, state *decodingState, l
 		if len(state.daterange) > 0 {
 			p.SetDateRange(state.daterange)
 			state.daterange = []*DateRange{}
+		}
+		if state.tagTiles && p.Count() > 0 {
+			p.Segments[p.last()].Tiles = state.tiles
+			state.tagTiles = false
 		}
 	// start tag first
 	case line == "#EXTM3U":
@@ -866,6 +907,27 @@ func decodeLineOfMediaPlaylist(p *MediaPlaylist, wv *WV, state *decodingState, l
 	case strings.HasPrefix(line, "#EXT-X-I-FRAMES-ONLY"):
 		state.listType = MEDIA
 		p.Iframe = true
+	case line == "#EXT-X-IMAGES-ONLY":
+		state.listType = MEDIA
+		p.ImagesOnly = true
+	case strings.HasPrefix(line, "#EXT-X-TILES:"):
+		// Apple places EXT-X-TILES between EXTINF and the URI, but either side of EXTINF
+		// lands on the segment whose URI follows.
+		state.listType = MEDIA
+		state.tiles = new(Tiles)
+		for k, v := range decodeParamsLine(line[13:]) {
+			switch k {
+			case "RESOLUTION":
+				state.tiles.Resolution = v
+			case "LAYOUT":
+				state.tiles.Layout = v
+			case "DURATION":
+				if state.tiles.Duration, err = strconv.ParseFloat(v, 64); strict && err != nil {
+					return fmt.Errorf("tiles duration parsing error: %s", err)
+				}
+			}
+		}
+		state.tagTiles = true
 	case strings.HasPrefix(line, "#WV-AUDIO-CHANNELS"):
 		state.listType = MEDIA
 		if _, err = fmt.Sscanf(line, "#WV-AUDIO-CHANNELS %d", &wv.AudioChannels); strict && err != nil {
