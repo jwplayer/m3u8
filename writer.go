@@ -843,6 +843,11 @@ func (p *MediaPlaylist) Encode() *bytes.Buffer {
 					p.buf.WriteString(seg.SCTE.Cue)
 					p.buf.WriteRune('\n')
 				case SCTE35Cue_End:
+					if seg.SCTE.Cue != "" {
+						p.buf.WriteString("#EXT-OATCLS-SCTE35:")
+						p.buf.WriteString(seg.SCTE.Cue)
+						p.buf.WriteRune('\n')
+					}
 					p.buf.WriteString("#EXT-X-CUE-IN")
 					p.buf.WriteRune('\n')
 				case SCTE35Cue_Start_End:
