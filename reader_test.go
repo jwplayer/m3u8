@@ -17,7 +17,6 @@ import (
 	"fmt"
 	"os"
 	"reflect"
-	"strings"
 	"testing"
 	"time"
 )
@@ -779,37 +778,21 @@ func TestMediaPlaylistWithOATCLSSCTE35Tag(t *testing.T) {
 }
 
 func TestMediaPlaylistWithOATCLSSCTE35CueIn(t *testing.T) {
-	const playlist = `#EXTM3U
-#EXT-X-VERSION:3
-#EXT-X-MEDIA-SEQUENCE:0
-#EXT-X-TARGETDURATION:10
-#EXT-OATCLS-SCTE35:/DA1AAAAAAAAAP/wBQb/WK5JfQAfAh1DVUVJAADDaX/AAADwkPYMBzU0MzE2MTQ0AAAAAAsLb8k=
-#EXT-X-CUE-OUT:175.175
-#EXTINF:10.000,
-media0.ts
-#EXT-OATCLS-SCTE35:/DAuAAAAAAAAAP/wBQb/WZ7acwAYAhZDVUVJAADDaX+ADAc1NDMxNjE0NQAAhw976A==
-#EXT-X-CUE-IN
-#EXTINF:10.000,
-media1.ts
-#EXT-X-CUE-IN
-#EXT-X-CUE-IN
-#EXTINF:10.000,
-media2.ts
-#EXT-X-CUE-OUT:10
-#EXT-X-CUE-IN
-#EXTINF:10.000,
-media3.ts
-`
-	p, _, err := DecodeFrom(bytes.NewBufferString(playlist), true)
+	content, err := os.ReadFile("sample-playlists/media-playlist-with-oatcls-scte35-cue-in.m3u8")
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, _, err := DecodeFrom(bytes.NewBuffer(content), true)
 	if err != nil {
 		t.Fatal(err)
 	}
 	pp := p.(*MediaPlaylist)
 
+	poStart := "/DA1AAAAAAAAAP/wBQb/WK5JfQAfAh1DVUVJAADDaX/AAADwkPYMBzU0MzE2MTQ0AAAAAAsLb8k="
 	expect := map[int]*SCTE{
-		0: {Syntax: SCTE35_OATCLS, CueType: SCTE35Cue_Start, Cue: "/DA1AAAAAAAAAP/wBQb/WK5JfQAfAh1DVUVJAADDaX/AAADwkPYMBzU0MzE2MTQ0AAAAAAsLb8k=", Time: 175.175},
-		1: {Syntax: SCTE35_OATCLS, CueType: SCTE35Cue_End, Cue: "/DAuAAAAAAAAAP/wBQb/WZ7acwAYAhZDVUVJAADDaX+ADAc1NDMxNjE0NQAAhw976A=="},
-		2: {Syntax: SCTE35_OATCLS, CueType: SCTE35Cue_End},
+		0: {Syntax: SCTE35_OATCLS, CueType: SCTE35Cue_Start, Cue: poStart, Time: 175.175},
+		1: {Syntax: SCTE35_OATCLS, CueType: SCTE35Cue_Mid, Cue: poStart, Time: 175.175, Elapsed: 10},
+		2: {Syntax: SCTE35_OATCLS, CueType: SCTE35Cue_End, Cue: "/DAuAAAAAAAAAP/wBQb/WZ7acwAYAhZDVUVJAADDaX+ADAc1NDMxNjE0NQAAhw976A=="},
 		3: {Syntax: SCTE35_OATCLS, CueType: SCTE35Cue_Start_End, Time: 10},
 	}
 	for i := 0; i < int(pp.Count()); i++ {
@@ -820,9 +803,37 @@ media3.ts
 		}
 	}
 
-	// the in cue point payload survives a round trip
-	if !strings.Contains(pp.String(), "#EXT-OATCLS-SCTE35:/DAuAAAAAAAAAP/wBQb/WZ7acwAYAhZDVUVJAADDaX+ADAc1NDMxNjE0NQAAhw976A==\n#EXT-X-CUE-IN\n#EXTINF:10.000,\nmedia1.ts\n") {
-		t.Errorf("OATCLS SCTE35 in cue point not written back:\n%v", pp)
+	if pp.String() != string(content) {
+		t.Errorf("OATCLS SCTE35 round trip\ngot:\n%v\nexp:\n%v", pp, string(content))
+	}
+}
+
+func TestMediaPlaylistWithOATCLSCoLocatedCueIn(t *testing.T) {
+	// odd input: neither opens a break, and a CUE-OUT-CONT payload must not end up
+	// as the in cue point's
+	const playlist = `#EXTM3U
+#EXT-X-VERSION:3
+#EXT-X-MEDIA-SEQUENCE:0
+#EXT-X-TARGETDURATION:10
+#EXT-X-CUE-IN
+#EXT-X-CUE-IN
+#EXTINF:10.000,
+media0.ts
+#EXT-X-CUE-OUT-CONT:ElapsedTime=10,Duration=20,SCTE35=/DA1AAAAAAAAAP/wBQb/WK5JfQAfAh1DVUVJAADDaX/AAADwkPYMBzU0MzE2MTQ0AAAAAAsLb8k=
+#EXT-X-CUE-IN
+#EXTINF:10.000,
+media1.ts
+`
+	p, _, err := DecodeFrom(bytes.NewBufferString(playlist), true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pp := p.(*MediaPlaylist)
+
+	for i := 0; i < int(pp.Count()); i++ {
+		if pp.Segments[i].SCTE.CueType != SCTE35Cue_End || pp.Segments[i].SCTE.Cue != "" {
+			t.Errorf("segment %v must result in SCTE35Cue_End without payload, got: %#v", i, pp.Segments[i].SCTE)
+		}
 	}
 }
 

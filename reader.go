@@ -899,6 +899,10 @@ func decodeLineOfMediaPlaylist(p *MediaPlaylist, wv *WV, state *decodingState, l
 	case state.tagSCTE35 && state.scte.Syntax == SCTE35_OATCLS && line == "#EXT-X-CUE-IN":
 		// the previous line is #EXT-OATCLS-SCTE35:<cue> carrying the in cue point payload, or
 		// a co-located #EXT-X-CUE-IN. Neither opens a break.
+		if state.scte.CueType == SCTE35Cue_Mid {
+			// a co-located #EXT-X-CUE-OUT-CONT payload is the out cue point's, not the in's
+			state.scte.Cue = ""
+		}
 		state.scte.CueType = SCTE35Cue_End
 	case !state.tagSCTE35 && line == "#EXT-X-CUE-IN":
 		state.tagSCTE35 = true
