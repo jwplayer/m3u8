@@ -600,6 +600,7 @@ func decodeLineOfMediaPlaylist(p *MediaPlaylist, wv *WV, state *decodingState, l
 		}
 		if state.tagSCTE35 {
 			state.tagSCTE35 = false
+			state.tagCueOut = false
 			if err = p.SetSCTE35(state.scte); strict && err != nil {
 				return err
 			}
@@ -861,6 +862,7 @@ func decodeLineOfMediaPlaylist(p *MediaPlaylist, wv *WV, state *decodingState, l
 		// EXT-OATCLS-SCTE35 contains the SCTE35 tag, EXT-X-CUE-OUT contains duration
 		state.scte.Time, _ = strconv.ParseFloat(line[15:], 64)
 		state.scte.CueType = SCTE35Cue_Start
+		state.tagCueOut = true
 	case !state.tagSCTE35 && strings.HasPrefix(line, "#EXT-X-CUE-OUT-CONT:"):
 		state.tagSCTE35 = true
 		state.scte = new(SCTE)
@@ -882,6 +884,7 @@ func decodeLineOfMediaPlaylist(p *MediaPlaylist, wv *WV, state *decodingState, l
 		// is longer than 14 chars then the line is of the form #EXT-X-CUE-OUT:<duration>. This could
 		// indicate a cue type of SCTE35Cue_Start_End, this will only be the case if the next line is #EXT-X-CUE-IN.
 		state.tagSCTE35 = true
+		state.tagCueOut = true
 		state.scte = new(SCTE)
 		state.scte.Syntax = SCTE35_OATCLS
 		state.scte.CueType = SCTE35Cue_Start
@@ -889,10 +892,14 @@ func decodeLineOfMediaPlaylist(p *MediaPlaylist, wv *WV, state *decodingState, l
 		if lenLine > 14 {
 			state.scte.Time, _ = strconv.ParseFloat(line[15:], 64)
 		}
-	case state.tagSCTE35 && line == "#EXT-X-CUE-IN":
-		// if tagSCTE35 is set, then the previous line was of the form #EXT-X-CUE-OUT:<duration>, so
-		// the cuetype is set here to SCTE35Cue_Start_End.
+	case state.tagSCTE35 && state.tagCueOut && line == "#EXT-X-CUE-IN":
+		// the previous line was of the form #EXT-X-CUE-OUT:<duration>, so the cuetype is
+		// set here to SCTE35Cue_Start_End.
 		state.scte.CueType = SCTE35Cue_Start_End
+	case state.tagSCTE35 && state.scte.Syntax == SCTE35_OATCLS && line == "#EXT-X-CUE-IN":
+		// the previous line is #EXT-OATCLS-SCTE35:<cue> carrying the in cue point payload, or
+		// a co-located #EXT-X-CUE-IN. Neither opens a break.
+		state.scte.CueType = SCTE35Cue_End
 	case !state.tagSCTE35 && line == "#EXT-X-CUE-IN":
 		state.tagSCTE35 = true
 		state.scte = new(SCTE)

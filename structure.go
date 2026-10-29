@@ -379,6 +379,7 @@ type decodingState struct {
 	tagStreamInf       bool
 	tagInf             bool
 	tagSCTE35          bool
+	tagCueOut          bool // the pending SCTE-35 tag is an #EXT-X-CUE-OUT
 	tagRange           bool
 	tagDiscontinuity   bool
 	tagGap             bool
